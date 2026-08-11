@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ลงทะเบียนอบรมผู้รับเหมา</title>
+<style>
+  :root{
+    --ink:#1a2b2a;
+    --ink-soft:#4a5b59;
+    --paper:#f6f4ef;
+    --card:#ffffff;
+    --line:#e2e0d8;
+    --accent:#0f6b5c;
+    --accent-soft:#e5f2ee;
+    --danger:#b3452f;
+    --danger-soft:#fbeae6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Noto Sans Thai","Segoe UI",sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding:32px 16px;
+  }
+  .wrap{max-width:600px;margin:0 auto;}
+  .eyebrow{
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent);font-weight:700;margin-bottom:6px;
+  }
+  h1{font-size:22px;margin:0 0 4px;}
+  .sub{color:var(--ink-soft);font-size:14px;margin:0 0 24px;}
+  .card{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:22px;margin-bottom:16px;
+  }
+  .card h2{font-size:15px;margin:0 0 4px;}
+  .card p.hint{font-size:12px;color:var(--ink-soft);margin:0 0 16px;}
+  label{display:block;font-size:13px;color:var(--ink-soft);margin:0 0 6px;font-weight:600;}
+  input[type=text],input[type=email],input[type=tel]{
+    width:100%;padding:10px 12px;border:1px solid var(--line);
+    border-radius:8px;font-size:14px;margin-bottom:14px;font-family:inherit;
+    background:#fff;color:var(--ink);
+  }
+  input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  select{
+    width:100%;padding:10px 12px;border:1px solid var(--line);
+    border-radius:8px;font-size:14px;margin-bottom:14px;font-family:inherit;
+    background:#fff;color:var(--ink);cursor:pointer;
+  }
+  select:invalid{color:var(--ink-soft);}
+  select:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+  .participant-row{
+    display:grid;grid-template-columns:20px 1.5fr 1fr 32px;gap:8px;align-items:center;margin-bottom:10px;
+  }
+  .participant-row input{margin-bottom:0;}
+  .participant-row .num{
+    font-size:12px;color:var(--ink-soft);text-align:center;
+  }
+  .participant-head{
+    display:grid;grid-template-columns:20px 1.5fr 1fr 32px;gap:8px;margin-bottom:6px;
+  }
+  .participant-head span{font-size:11px;color:var(--ink-soft);font-weight:600;}
+  .remove-btn{
+    flex:none;width:32px;height:32px;border-radius:8px;border:1px solid var(--line);
+    background:var(--danger-soft);color:var(--danger);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;line-height:1;
+  }
+  .remove-btn:hover{background:#f3d9d1;}
+  .add-btn{
+    width:100%;padding:10px;border-radius:8px;border:1px dashed var(--accent);
+    background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:600;
+    cursor:pointer;margin-top:4px;
+  }
+  .add-btn:hover{background:#d9ede7;}
+  .count-badge{
+    display:inline-block;background:var(--accent-soft);color:var(--accent);
+    font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;margin-left:8px;
+  }
+  .submit-btn{
+    width:100%;padding:13px;border-radius:10px;border:none;
+    background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+  }
+  .submit-btn:hover{background:#0c5a4d;}
+  .preview{
+    background:#0f1f1c;color:#d6ece6;border-radius:10px;padding:14px 16px;
+    font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;
+    display:none;font-family:"Consolas",monospace;
+  }
+  .preview.show{display:block;}
+  .preview-label{font-size:11px;color:var(--ink-soft);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em;}
+
+  /* ===== ปฏิทิน ===== */
+  .cal-header{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+  }
+  .cal-header button{
+    width:28px;height:28px;border-radius:7px;border:1px solid var(--line);
+    background:#fff;color:var(--ink-soft);font-size:14px;cursor:pointer;
+  }
+  .cal-header button:hover{background:var(--accent-soft);color:var(--accent);}
+  .cal-header button:disabled{opacity:.3;cursor:not-allowed;}
+  .cal-title{font-size:13px;font-weight:700;}
+  .cal-grid{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px;
+  }
+  .cal-dow{
+    text-align:center;font-size:11px;color:var(--ink-soft);padding:4px 0;font-weight:600;
+  }
+  .cal-day{
+    text-align:center;padding:8px 0;border-radius:8px;font-size:13px;
+    color:#c8c5ba;cursor:default;position:relative;
+  }
+  .cal-day.open{
+    background:var(--accent-soft);color:var(--accent);cursor:pointer;font-weight:600;
+  }
+  .cal-day.open:hover{background:#d3ece4;}
+  .cal-day.selected{
+    background:var(--accent);color:#fff;
+  }
+  .cal-day.full{
+    background:var(--danger-soft);color:var(--danger);cursor:not-allowed;
+    text-decoration:line-through;opacity:.7;
+  }
+  .cal-day.past{
+    color:#d8d5cc;cursor:not-allowed;opacity:.5;
+  }
+  .cal-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+  .cal-legend span{
+    display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-soft);
+  }
+  .cal-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
+  .dot-open{background:var(--accent-soft);border:1px solid var(--accent);}
+  .dot-selected{background:var(--accent);}
+  .dot-full{background:var(--danger-soft);border:1px solid var(--danger);}
+  .session-info{
+    background:var(--accent-soft);border-radius:9px;padding:10px 14px;margin-bottom:4px;
+    font-size:12px;color:#0c4f43;display:none;
+  }
+  .session-info.show{display:block;}
+  .session-info b{display:block;font-size:13px;margin-bottom:2px;}
+  .no-selection{
+    font-size:12px;color:var(--ink-soft);font-style:italic;
+  }
+  .sync-note{
+    font-size:11px;color:var(--ink-soft);margin-top:2px;display:flex;align-items:center;gap:5px;
+  }
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">ลงทะเบียนล่วงหน้า</div>
+  <h1>ลงทะเบียนอบรมผู้รับเหมา</h1>
+  <p class="sub">ตัวแทนบริษัทกรอกข้อมูลครั้งเดียว เพิ่มรายชื่อผู้เข้าร่วมได้ไม่จำกัดจำนวน</p>
+
+  <!-- ===== 1. ปฏิทินเลือกวันที่ ===== -->
+  <div class="card">
+    <h2>เลือกวันที่เข้าอบรม</h2>
+    <p class="hint">เลือกได้เฉพาะวันที่มีรอบอบรมเปิดอยู่เท่านั้น</p>
+
+    <div class="cal-header">
+      <button type="button" id="calPrev">‹</button>
+      <span class="cal-title" id="calTitle"></span>
+      <button type="button" id="calNext">›</button>
+    </div>
+
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="cal-legend">
+      <span><i class="dot-open"></i>มีรอบเปิดอบรม</span>
+      <span><i class="dot-selected"></i>วันที่เลือก</span>
+      <span><i class="dot-full"></i>ที่นั่งเต็ม</span>
+      <span><i style="background:#d8d5cc;"></i>วันที่ผ่านมาแล้ว</span>
+    </div>
+
+    <div class="session-info" id="sessionInfo"></div>
+    <p class="no-selection" id="noSelection">ยังไม่ได้เลือกวันที่</p>
+    <p class="sync-note"><span class="sync-dot"></span>วันที่เปิดอบรมดึงมาจากไฟล์ที่ Power Automate สร้างจาก SharePoint อัตโนมัติ</p>
+  </div>
+
+  <!-- ===== 2. ข้อมูลบริษัทและตัวแทน ===== -->
+  <div class="card">
+    <h2>ข้อมูลบริษัทและตัวแทนผู้จอง</h2>
+    <p class="hint">กรอกครั้งเดียวสำหรับทุกคนในกลุ่ม</p>
+
+    <label for="companyName">ชื่อบริษัท</label>
+    <input type="text" id="companyName" placeholder="เช่น บริษัท เอบีซี จำกัด">
+
+    <label for="workUnit">หน่วยงานที่ปฏิบัติงาน</label>
+    <select id="workUnit">
+      <option value="" disabled selected>เลือกหน่วยงาน</option>
+      <option value="OC">OC</option>
+      <option value="ปท.1">ปท.1</option>
+    </select>
+
+    <div class="two-col">
+      <div>
+        <label for="repName">ชื่อตัวแทน (ผู้จอง)</label>
+        <input type="text" id="repName" placeholder="ชื่อ-นามสกุล">
+      </div>
+      <div>
+        <label for="repPhone">เบอร์โทรผู้จอง</label>
+        <input type="tel" id="repPhone" placeholder="08X-XXX-XXXX">
+      </div>
+    </div>
+
+    <label for="repEmail">อีเมลที่ใช้รับไฟล์บัตรผู้รับเหมา</label>
+    <input type="email" id="repEmail" placeholder="name@company.com">
+  </div>
+
+  <!-- ===== 3. รายชื่อผู้เข้าอบรม ===== -->
+  <div class="card">
+    <h2>รายชื่อผู้เข้าอบรม <span class="count-badge" id="countBadge">1 คน</span></h2>
+    <p class="hint">เลข Staff Permit ไม่บังคับกรอก</p>
+
+    <div class="participant-head">
+      <span></span>
+      <span>ชื่อ นามสกุล</span>
+      <span>เลข Staff Permit</span>
+      <span></span>
+    </div>
+    <div id="participantList"></div>
+    <button type="button" class="add-btn" id="addBtn">+ เพิ่มรายชื่อผู้เข้าร่วม</button>
+  </div>
+
+  <button type="button" class="submit-btn" id="submitBtn">ตรวจสอบและไปกรอกฟอร์มยืนยัน</button>
+
+  <div class="preview-label">ตัวอย่างข้อมูลที่จะส่งต่อ (สำหรับทดสอบ)</div>
+  <div class="preview" id="preview"></div>
+</div>
+
+<script>
+  /* =========================================================================
+     ตั้งค่าลิงก์ Microsoft Forms ตรงนี้
+     วิธีหา field id: เปิดฟอร์ม -> "..." -> Get pre-filled link ->
+     กรอกค่าตัวอย่างในทุกช่อง -> Forms จะสร้าง URL ให้ -> คัดลอกรหัสแต่ละ r... มาใส่
+     (ตั้งชื่อ key เป็นชื่อความหมายไว้แล้ว แก้ไขแค่ค่าฝั่งขวาของแต่ละบรรทัดได้เลย
+      ไม่ต้องยุ่งกับส่วนอื่นของโค้ด)
+  ========================================================================= */
+  const FORM_CONFIG = {
+    baseUrl: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=56X98qEuDUWfwSr1-GMAlUucuOBE0B9BnJBrzNrmW-tUQzY3RUs0NUkyMjdTTUZRN1VBNFAwNk41VS4u',
+    fields: {
+      companyName:   'r346f476d1e5b4f6488a28be851e9e330', // ชื่อบริษัท
+      workUnit:      'r800c1875abf84a39b1f8c42ff9f44165', // หน่วยงานที่ปฏิบัติงาน
+      repName:       'r37798da71f744485bb6ae94a8a3c7c2f', // ชื่อตัวแทน (ผู้จอง)
+      repPhone:      'r5dcd82cb623c41ddb65326e082ad956b', // เบอร์โทรผู้จอง
+      repEmail:      'r189d0aba93544ff4ac9c6ae66741274f', // อีเมลรับไฟล์บัตร
+      trainingDate:  'r3a725badb770406193ef77a653b14469', // วันที่เข้าอบรม (ส่งเป็น MM/DD/YYYY)
+      courseCode:    'r2efee07518bf46ea88addbc58dd70e6e', // รหัสคอร์ส (เช่น ST001)
+      namesBlock:    'r69c21c71a7094a4db58405bae2397d8c', // รายชื่อผู้เข้าอบรม (บรรทัดละ 1 คน)
+      permitsBlock:  'r73ecfef169e445f19499bb753d31a502', // เลข Staff Permit (เรียงบรรทัดตรงกับชื่อ ช่องว่างได้ถ้าไม่กรอก)
+    }
+  };
+
+  /* =========================================================================
+     ข้อมูลรอบอบรม (จำลองไฟล์ JSON ที่ Power Automate สร้างจาก SharePoint ตาราง "รอบอบรม")
+     ของจริง: เปลี่ยนตรงนี้เป็น fetch('URL ไฟล์ JSON จริง') แทน object นี้
+  ========================================================================= */
+  const trainingSessions = {
+    // status: 'open' = เปิดรับ (เขียว), 'full' = ปิดรับ (แดง)
+    // courseCode: รหัสคอร์สจาก TrainingSlots (เช่น ST001) — ต้องส่งไปพร้อม Forms ด้วย
+    // วันที่ "ยกเลิก" จะไม่มี key อยู่ใน object นี้เลย (Power Automate กรองไม่ส่งมา) จึงขึ้นเป็นวันปกติอัตโนมัติ
+    '2026-07-03': { course: 'Safety Awareness รุ่น 13', courseCode: 'ST001', time: '09:00-12:00', seatsLeft: 8,  seatsTotal: 20, status: 'open' },
+    '2026-07-10': { course: 'Safety Awareness รุ่น 14', courseCode: 'ST002', time: '09:00-12:00', seatsLeft: 2,  seatsTotal: 20, status: 'open' },
+    '2026-07-15': { course: 'Fire Fighting รุ่น 6',      courseCode: 'ST003', time: '13:00-16:00', seatsLeft: 12, seatsTotal: 15, status: 'open' },
+    '2026-07-22': { course: 'Working at Height รุ่น 9',  courseCode: 'ST004', time: '09:00-12:00', seatsLeft: 0,  seatsTotal: 25, status: 'full' },
+    '2026-08-05': { course: 'Electrical Safety รุ่น 4',  courseCode: 'ST005', time: '09:00-12:00', seatsLeft: 17, seatsTotal: 20, status: 'open' },
+  };
+
+  const dowLabels = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const monthLabels = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+  let viewYear = 2026, viewMonth = 6; // เริ่มที่กรกฎาคม 2026
+  let selectedDate = null; // เก็บเป็น 'YYYY-MM-DD' ภายในระบบเสมอ (ง่ายต่อการเทียบ/เรียง)
+
+  const calGrid = document.getElementById('calGrid');
+  const calTitle = document.getElementById('calTitle');
+  const sessionInfo = document.getElementById('sessionInfo');
+  const noSelection = document.getElementById('noSelection');
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function dateKey(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+
+  // แปลง 'YYYY-MM-DD' -> 'MM/DD/YYYY' สำหรับส่งเข้า Forms/SharePoint ตามที่กำหนด
+  function toMMDDYYYY(isoDateKey){
+    const [y, m, d] = isoDateKey.split('-');
+    return `${m}/${d}/${y}`;
+  }
+
+  function renderCalendar(){
+    calTitle.textContent = `${monthLabels[viewMonth]} ${viewYear + 543}`;
+    calGrid.innerHTML = '';
+    dowLabels.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-dow';
+      el.textContent = d;
+      calGrid.appendChild(el);
+    });
+
+    const firstDow = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+    for(let i = 0; i < firstDow; i++){
+      calGrid.appendChild(document.createElement('div'));
+    }
+
+    for(let d = 1; d <= daysInMonth; d++){
+      const key = dateKey(viewYear, viewMonth, d);
+      const session = trainingSessions[key];
+      const cell = document.createElement('div');
+      cell.textContent = d;
+      cell.className = 'cal-day';
+
+      // เช็คว่าวันนี้ผ่านไปแล้วหรือยัง (เทียบกับวันที่ปัจจุบันจริงของเครื่อง ไม่ใช่วันที่ mock)
+      const cellDate = new Date(viewYear, viewMonth, d);
+      const todayStart = new Date();
+      todayStart.setHours(0,0,0,0);
+      const isPast = cellDate < todayStart;
+
+      if(isPast){
+        // วันที่ผ่านไปแล้ว: กดไม่ได้เสมอ ไม่ว่าจะเคยมีรอบเปิดหรือไม่ก็ตาม
+        cell.classList.add('past');
+      } else if(session){
+        const isFull = session.status === 'full';
+        cell.classList.add(isFull ? 'full' : 'open');
+        if(!isFull){
+          cell.addEventListener('click', () => selectDate(key));
+        }
+      }
+      // หมายเหตุ: วันที่ "ยกเลิก" จะไม่มี key ใน trainingSessions เลย (ถูกกรองออกตอน generate JSON)
+      // ทำให้ cell.className ยังคงเป็นแค่ 'cal-day' เฉยๆ (สีปกติ กดไม่ได้) โดยอัตโนมัติ ไม่ต้องเขียน logic แยก
+      if(key === selectedDate){
+        cell.classList.remove('open');
+        cell.classList.add('selected');
+      }
+      calGrid.appendChild(cell);
+    }
+  }
+
+  function selectDate(key){
+    selectedDate = key;
+    const s = trainingSessions[key];
+    sessionInfo.innerHTML = `<b>${s.course}</b>วันที่ ${toMMDDYYYY(key)} · ${s.time} · เหลือที่นั่ง ${s.seatsLeft}/${s.seatsTotal}`;
+    sessionInfo.classList.add('show');
+    noSelection.style.display = 'none';
+    renderCalendar();
+  }
+
+  document.getElementById('calPrev').addEventListener('click', () => {
+    viewMonth--;
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+  document.getElementById('calNext').addEventListener('click', () => {
+    viewMonth++;
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+
+  renderCalendar();
+
+  /* ===== ส่วนรายชื่อผู้เข้าร่วม + เลข Staff Permit ===== */
+  const listEl = document.getElementById('participantList');
+  const countBadge = document.getElementById('countBadge');
+
+  function renumber(){
+    const rows = listEl.querySelectorAll('.participant-row');
+    rows.forEach((row, i) => {
+      row.querySelector('.num').textContent = i + 1;
+    });
+    countBadge.textContent = rows.length + ' คน';
+    rows.forEach(row => {
+      row.querySelector('.remove-btn').disabled = rows.length <= 1;
+      row.querySelector('.remove-btn').style.opacity = rows.length <= 1 ? '0.35' : '1';
+    });
+  }
+
+  function addParticipant(){
+    const row = document.createElement('div');
+    row.className = 'participant-row';
+    row.innerHTML = `
+      <span class="num"></span>
+      <input type="text" class="participant-name" placeholder="ชื่อ นามสกุล">
+      <input type="text" class="participant-permit" placeholder="XX-XXXXXX">
+      <button type="button" class="remove-btn" title="ลบรายชื่อนี้">×</button>
+    `;
+    row.querySelector('.remove-btn').addEventListener('click', () => {
+      row.remove();
+      renumber();
+    });
+    listEl.appendChild(row);
+    renumber();
+  }
+
+  document.getElementById('addBtn').addEventListener('click', addParticipant);
+  addParticipant(); // เริ่มต้นด้วย 1 แถว
+
+  /* ===== ตรวจสอบและส่งข้อมูล ===== */
+  document.getElementById('submitBtn').addEventListener('click', () => {
+    const companyName = document.getElementById('companyName').value.trim();
+    const workUnit     = document.getElementById('workUnit').value.trim();
+    const repName      = document.getElementById('repName').value.trim();
+    const repPhone     = document.getElementById('repPhone').value.trim();
+    const repEmail     = document.getElementById('repEmail').value.trim();
+    const trainingDate = selectedDate; // 'YYYY-MM-DD' ภายในระบบ
+
+    const rows = Array.from(document.querySelectorAll('.participant-row'));
+    const names = rows.map(r => r.querySelector('.participant-name').value.trim());
+    const permits = rows.map(r => r.querySelector('.participant-permit').value.trim());
+
+    // เก็บเฉพาะแถวที่มีชื่อ (ตัดแถวว่างทิ้ง) แต่คงตำแหน่งคู่กันระหว่างชื่อ-เลข permit ไว้
+    const validIndexes = names.map((n, i) => n.length > 0 ? i : -1).filter(i => i !== -1);
+    const validNames   = validIndexes.map(i => names[i]);
+    const validPermits = validIndexes.map(i => permits[i] || '-'); // ใช้ "-" แทนค่าว่าง ป้องกัน Forms ตัดบรรทัดว่างท้ายข้อความทิ้ง
+
+    if(!trainingDate){
+      alert('กรุณาเลือกวันที่เข้าอบรมจากปฏิทินก่อน');
+      return;
+    }
+    if(!companyName || !workUnit || !repName || !repPhone || !repEmail){
+      alert('กรุณากรอกข้อมูลบริษัทและตัวแทนผู้จองให้ครบทุกช่อง');
+      return;
+    }
+    if(validNames.length === 0){
+      alert('กรุณากรอกรายชื่อผู้เข้าอบรมอย่างน้อย 1 คน');
+      return;
+    }
+
+    const session = trainingSessions[trainingDate];
+    const trainingDateFormatted = toMMDDYYYY(trainingDate); // ส่งเป็น MM/DD/YYYY ตามที่กำหนด
+
+    // รวมชื่อและ permit เป็นก้อนข้อความ คนละก้อน คั่นด้วยขึ้นบรรทัดใหม่ เรียงตำแหน่งตรงกัน
+    const namesBlock   = validNames.join('\n');
+    const permitsBlock = validPermits.join('\n');
+
+    const payload = {
+      companyName, workUnit, repName, repPhone, repEmail,
+      trainingDate: trainingDateFormatted,
+      course: session.course, courseCode: session.courseCode, time: session.time,
+      participants: validNames.map((n, i) => ({ name: n, staffPermit: validPermits[i] })),
+    };
+
+    // แสดงตัวอย่างข้อมูลไว้เสมอ (โหมดทดสอบ / ตรวจสอบก่อนส่ง)
+    const preview = document.getElementById('preview');
+    preview.textContent = JSON.stringify(payload, null, 2);
+    preview.classList.add('show');
+
+    if(!FORM_CONFIG.baseUrl || FORM_CONFIG.baseUrl.includes('XXXXXXXX')){
+      alert('โหมดทดสอบ: ยังไม่ได้ตั้งค่าลิงก์ Microsoft Forms จริง ดูตัวอย่างข้อมูลด้านล่างแทน');
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.set(FORM_CONFIG.fields.companyName,  companyName);
+    params.set(FORM_CONFIG.fields.workUnit,      workUnit);
+    params.set(FORM_CONFIG.fields.repName,       repName);
+    params.set(FORM_CONFIG.fields.repPhone,      repPhone);
+    params.set(FORM_CONFIG.fields.repEmail,      repEmail);
+    params.set(FORM_CONFIG.fields.trainingDate,  trainingDateFormatted);
+    params.set(FORM_CONFIG.fields.courseCode,    session.courseCode);
+    params.set(FORM_CONFIG.fields.namesBlock,    namesBlock);
+    params.set(FORM_CONFIG.fields.permitsBlock,  permitsBlock);
+
+    window.location.href = `${FORM_CONFIG.baseUrl}&${params.toString()}`;
+  });
+</script>
+</body>
+</html>
