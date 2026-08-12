@@ -321,19 +321,47 @@
   }
 
   async function loadTrainingSessions(){
-    if(DATA_URL){
-      try{
-        const res = await fetch(DATA_URL, { cache: 'no-store' });
-        trainingSessions = await res.json();
-      }catch(err){
-        console.error('โหลดข้อมูลรอบอบรมจริงไม่สำเร็จ ใช้ข้อมูลจำลองแทน', err);
-        trainingSessions = DATA_URL;
+      if(DATA_URL){
+        try{
+          const res = await fetch(DATA_URL, { cache: 'no-store' });
+          const rawData = await res.json();
+          
+          trainingSessions = {}; // ล้างค่าเดิมก่อน
+  
+          // แปลงโครงสร้างจาก Array [...] ให้กลายเป็น Object {"YYYY-MM-DD": {...}}
+          if(Array.isArray(rawData)){
+            rawData.forEach(item => {
+              if(item.date){
+                // ดึงค่าเวลา (รองรับทั้งที่เป็นข้อความธรรมดา หรือก้อน { Value: '...' })
+                let timeStr = '';
+                if (item.time && typeof item.time === 'object') {
+                  timeStr = item.time.Value || item.time.value || '';
+                } else {
+                  timeStr = item.time || '';
+                }
+  
+                trainingSessions[item.date] = {
+                  course: item.course || 'อบรมความปลอดภัยผู้รับเหมา 3 ชม.',
+                  courseCode: item.courseCode || '',
+                  time: timeStr,
+                  seatsLeft: Number(item.seatsLeft) || 0,
+                  seatsTotal: Number(item.seatsTotal) || 0,
+                  status: item.status || (item.seatsLeft > 0 ? 'open' : 'full')
+                };
+              }
+            });
+          } else {
+            trainingSessions = rawData;
+          }
+        }catch(err){
+          console.error('โหลดข้อมูลรอบอบรมจริงไม่สำเร็จ ใช้ข้อมูลจำลองแทน', err);
+          trainingSessions = mockTrainingSessions;
+        }
+      } else {
+        trainingSessions = mockTrainingSessions;
       }
-    } else {
-      trainingSessions = DATA_URL;
+      renderCalendar();
     }
-    renderCalendar();
-  }
 
   function renderCalendar(){
     calTitle.textContent = `${monthLabels[viewMonth]} ${viewYear + 543}`;
