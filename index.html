@@ -149,6 +149,22 @@
     font-size:11px;color:var(--ink-soft);margin-top:2px;display:flex;align-items:center;gap:5px;
   }
   .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;}
+
+  /* ===== ตัวเลือกรอบ เมื่อวันเดียวมีหลายคอร์ส ===== */
+  .course-choices{display:none;flex-direction:column;gap:6px;margin-bottom:10px;}
+  .course-choices.show{display:flex;}
+  .course-choice{
+    text-align:left;border:1px solid var(--line);border-radius:9px;padding:9px 12px;
+    background:#fff;cursor:pointer;font-family:inherit;font-size:12px;color:var(--ink);
+  }
+  .course-choice b{display:block;font-size:13px;margin-bottom:1px;}
+  .course-choice.full{
+    background:var(--danger-soft);color:var(--danger);cursor:not-allowed;opacity:.75;
+  }
+  .course-choice.picked{
+    background:var(--accent);color:#fff;border-color:var(--accent);
+  }
+  .course-choice.picked b{color:#fff;}
 </style>
 </head>
 <body>
@@ -244,6 +260,7 @@
   const FORM_CONFIG = {
     baseUrl: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=56X98qEuDUWfwSr1-GMAlUucuOBE0B9BnJBrzNrmW-tUQzY3RUs0NUkyMjdTTUZRN1VBNFAwNk41VS4u',
     fields: {
+      regisCode:     'rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // TODO: ใส่ field id ของช่อง RegisCode ใน Forms (เพิ่มช่องนี้ในฟอร์มก่อน ถ้ายังไม่มี)
       companyName:   'r346f476d1e5b4f6488a28be851e9e330', // ชื่อบริษัท
       workUnit:      'r800c1875abf84a39b1f8c42ff9f44165', // หน่วยงานที่ปฏิบัติงาน
       repName:       'r37798da71f744485bb6ae94a8a3c7c2f', // ชื่อตัวแทน (ผู้จอง)
@@ -257,25 +274,28 @@
   };
 
   /* =========================================================================
-     ข้อมูลรอบอบรม (จำลองไฟล์ JSON ที่ Power Automate สร้างจาก SharePoint ตาราง "รอบอบรม")
-     ของจริง: เปลี่ยนตรงนี้เป็น fetch('URL ไฟล์ JSON จริง') แทน object นี้
+     ข้อมูลรอบอบรม ดึงจากไฟล์ JSON ที่ Power Automate สร้างจาก SharePoint list "TrainingSlots"
+     กติกา: 1 วัน มีรอบอบรมได้แค่ 1 อย่างเท่านั้น จึงเก็บเป็น "1 key ต่อวันที่ = 1 session" ตรง ๆ
+
+     {
+       "2026-08-11": { "course":"อบรมความปลอดภัย รุ่น 22", "courseCode":"ST-022", "time":"09:00-12:00", "seatsLeft":20, "seatsTotal":20, "status":"open" }
+     }
+
+     status: 'open' = SlotStatus "เปิดรับ" (เขียว) | 'full' = SlotStatus "ปิดรับ" (แดง)
+     รอบที่ SlotStatus = "ยกเลิก" (ปิดเองโดยเจ้าหน้าที่) ต้องถูก "กรองไม่ส่งออกมาเลย" ตั้งแต่ฝั่ง
+     Power Automate เพื่อให้วันนั้นกลับไปเป็นวันปกติที่กดจองไม่ได้ เหมือนวันที่ไม่มีรอบอบรม
   ========================================================================= */
-  const trainingSessions = {
-    // status: 'open' = เปิดรับ (เขียว), 'full' = ปิดรับ (แดง)
-    // courseCode: รหัสคอร์สจาก TrainingSlots (เช่น ST001) — ต้องส่งไปพร้อม Forms ด้วย
-    // วันที่ "ยกเลิก" จะไม่มี key อยู่ใน object นี้เลย (Power Automate กรองไม่ส่งมา) จึงขึ้นเป็นวันปกติอัตโนมัติ
-    '2026-07-03': { course: 'Safety Awareness รุ่น 13', courseCode: 'ST001', time: '09:00-12:00', seatsLeft: 8,  seatsTotal: 20, status: 'open' },
-    '2026-07-10': { course: 'Safety Awareness รุ่น 14', courseCode: 'ST002', time: '09:00-12:00', seatsLeft: 2,  seatsTotal: 20, status: 'open' },
-    '2026-07-15': { course: 'Fire Fighting รุ่น 6',      courseCode: 'ST003', time: '13:00-16:00', seatsLeft: 12, seatsTotal: 15, status: 'open' },
-    '2026-07-22': { course: 'Working at Height รุ่น 9',  courseCode: 'ST004', time: '09:00-12:00', seatsLeft: 0,  seatsTotal: 25, status: 'full' },
-    '2026-08-05': { course: 'Electrical Safety รุ่น 4',  courseCode: 'ST005', time: '09:00-12:00', seatsLeft: 17, seatsTotal: 20, status: 'open' },
-  };
+  const DATA_URL = 'https://1drv.ms/u/c/8cc8fc6d28088b50/IQADEiR5fHuTQaR-hZHmInZAAYtHzDN_nc9rJg-Jq4J7TfI?e=UUWYac?download=1'; // ใส่ URL ไฟล์ training-sessions.json ที่ Power Automate สร้าง/อัปเดตไว้ตรงนี้
+
+
+
+  let trainingSessions = {}; // จะถูกเติมจาก fetch(DATA_URL) หรือ mock ด้านบน
 
   const dowLabels = ['อา','จ','อ','พ','พฤ','ศ','ส'];
   const monthLabels = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-  let viewYear = 2026, viewMonth = 6; // เริ่มที่กรกฎาคม 2026
-  let selectedDate = null; // เก็บเป็น 'YYYY-MM-DD' ภายในระบบเสมอ (ง่ายต่อการเทียบ/เรียง)
+  let viewYear = 2026, viewMonth = 7; // เริ่มที่สิงหาคม 2026
+  let selectedDate = null; // 'YYYY-MM-DD'
 
   const calGrid = document.getElementById('calGrid');
   const calTitle = document.getElementById('calTitle');
@@ -289,6 +309,29 @@
   function toMMDDYYYY(isoDateKey){
     const [y, m, d] = isoDateKey.split('-');
     return `${m}/${d}/${y}`;
+  }
+
+  // สร้างรหัสการจอง (RegisCode) ใหม่ทุกครั้งที่กดส่งฟอร์ม ใช้ผูกผู้เข้าอบรมทุกคนในใบจองเดียวกันเข้าด้วยกัน
+  // รูปแบบ: REG-YYYYMMDD-XXXX (XXXX = เลขสุ่ม กันชนกันกรณีจองพร้อมกันวันเดียวกัน)
+  function generateRegisCode(isoDateKey){
+    const ymd = isoDateKey.replace(/-/g, '');
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    return `REG-${ymd}-${rand}`;
+  }
+
+  async function loadTrainingSessions(){
+    if(DATA_URL){
+      try{
+        const res = await fetch(DATA_URL, { cache: 'no-store' });
+        trainingSessions = await res.json();
+      }catch(err){
+        console.error('โหลดข้อมูลรอบอบรมจริงไม่สำเร็จ ใช้ข้อมูลจำลองแทน', err);
+        trainingSessions = mockTrainingSessions;
+      }
+    } else {
+      trainingSessions = mockTrainingSessions;
+    }
+    renderCalendar();
   }
 
   function renderCalendar(){
@@ -310,7 +353,7 @@
 
     for(let d = 1; d <= daysInMonth; d++){
       const key = dateKey(viewYear, viewMonth, d);
-      const session = trainingSessions[key];
+      const session = trainingSessions[key]; // มีได้สูงสุด 1 รอบต่อวัน
       const cell = document.createElement('div');
       cell.textContent = d;
       cell.className = 'cal-day';
@@ -331,8 +374,9 @@
           cell.addEventListener('click', () => selectDate(key));
         }
       }
-      // หมายเหตุ: วันที่ "ยกเลิก" จะไม่มี key ใน trainingSessions เลย (ถูกกรองออกตอน generate JSON)
-      // ทำให้ cell.className ยังคงเป็นแค่ 'cal-day' เฉยๆ (สีปกติ กดไม่ได้) โดยอัตโนมัติ ไม่ต้องเขียน logic แยก
+      // หมายเหตุ: วันที่ "ยกเลิก" โดยเจ้าหน้าที่ จะไม่มี key ใน trainingSessions เลย
+      // (Power Automate กรองไม่ส่งออกมาตั้งแต่ต้น) ทำให้ cell.className เป็นแค่ 'cal-day' เฉยๆ
+      // สีปกติ กดไม่ได้ เหมือนวันที่ไม่มีรอบอบรมเลย โดยอัตโนมัติ ไม่ต้องเขียน logic แยก
       if(key === selectedDate){
         cell.classList.remove('open');
         cell.classList.add('selected');
@@ -361,7 +405,7 @@
     renderCalendar();
   });
 
-  renderCalendar();
+  loadTrainingSessions();
 
   /* ===== ส่วนรายชื่อผู้เข้าร่วม + เลข Staff Permit ===== */
   const listEl = document.getElementById('participantList');
@@ -431,14 +475,19 @@
     }
 
     const session = trainingSessions[trainingDate];
+    if(!session || session.status === 'full'){
+      alert('รอบที่เลือกเต็มหรือไม่พร้อมให้จองแล้ว กรุณาเลือกวันที่อื่น');
+      return;
+    }
     const trainingDateFormatted = toMMDDYYYY(trainingDate); // ส่งเป็น MM/DD/YYYY ตามที่กำหนด
+    const regisCode = generateRegisCode(trainingDate); // รหัสผูกทุกคนในใบจองนี้เข้าด้วยกัน (คอลัมน์ RegisCode ใน TrainingRegistrations)
 
     // รวมชื่อและ permit เป็นก้อนข้อความ คนละก้อน คั่นด้วยขึ้นบรรทัดใหม่ เรียงตำแหน่งตรงกัน
     const namesBlock   = validNames.join('\n');
     const permitsBlock = validPermits.join('\n');
 
     const payload = {
-      companyName, workUnit, repName, repPhone, repEmail,
+      regisCode, companyName, workUnit, repName, repPhone, repEmail,
       trainingDate: trainingDateFormatted,
       course: session.course, courseCode: session.courseCode, time: session.time,
       participants: validNames.map((n, i) => ({ name: n, staffPermit: validPermits[i] })),
@@ -455,6 +504,7 @@
     }
 
     const params = new URLSearchParams();
+    params.set(FORM_CONFIG.fields.regisCode,     regisCode);
     params.set(FORM_CONFIG.fields.companyName,  companyName);
     params.set(FORM_CONFIG.fields.workUnit,      workUnit);
     params.set(FORM_CONFIG.fields.repName,       repName);
