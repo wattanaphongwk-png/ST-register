@@ -284,10 +284,13 @@
      status: 'open' = SlotStatus "เปิดรับ" (เขียว) | 'full' = SlotStatus "ปิดรับ" (แดง)
      รอบที่ SlotStatus = "ยกเลิก" (ปิดเองโดยเจ้าหน้าที่) ต้องถูก "กรองไม่ส่งออกมาเลย" ตั้งแต่ฝั่ง
      Power Automate เพื่อให้วันนั้นกลับไปเป็นวันปกติที่กดจองไม่ได้ เหมือนวันที่ไม่มีรอบอบรม
-  ========================================================================= */
-  const DATA_URL = 'https://1drv.ms/u/c/8cc8fc6d28088b50/IQADEiR5fHuTQaR-hZHmInZAAYtHzDN_nc9rJg-Jq4J7TfI?e=WGBAvj?download=1'; // ใส่ URL ไฟล์ training-sessions.json ที่ Power Automate สร้าง/อัปเดตไว้ตรงนี้
-
-
+    ========================================================================= */
+    // 1. ใส่ลิงก์ OneDrive ของคุณตรงนี้ (อย่าลืม ?download=1)
+  const ONEDRIVE_LINK = 'https://1drv.ms/u/c/8cc8fc6d28088b50/IQADEiR5fHuTQaR-hZHmInZAAYtHzDN_nc9rJg-Jq4J7TfI?e=WGBAvj?download=1'; 
+  
+  // 2. เปลี่ยน DATA_URL ให้วิ่งผ่านตัวกลาง AllOrigins เพื่อแก้ปัญหา CORS
+  const DATA_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(ONEDRIVE_LINK);
+  
 
   let trainingSessions = {}; // จะถูกเติมจาก fetch(DATA_URL) หรือ mock ด้านบน
 
