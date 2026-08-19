@@ -288,7 +288,13 @@
 
 
   const DATA_URL = 'https://1drv.ms/u/c/8cc8fc6d28088b50/IQADEiR5fHuTQaR-hZHmInZAAYtHzDN_nc9rJg-Jq4J7TfI?e=WGBAvj?download=1;
-  
+
+  const mockTrainingSessions = {
+    '2026-08-10': { course: 'อบรมความปลอดภัย รุ่น 21', courseCode: 'ST-021', time: '09:00-12:00', seatsLeft: 100, seatsTotal: 100, status: 'open' },
+    '2026-08-15': { course: 'อบรมความปลอดภัย รุ่น 22', courseCode: 'ST-022', time: '09:00-12:00', seatsLeft: 20,  seatsTotal: 20,  status: 'open' },
+    '2026-08-20': { course: 'อบรมความปลอดภัย รุ่น 24', courseCode: 'ST-024', time: '09:00-12:00', seatsLeft: 0,   seatsTotal: 1,   status: 'full' },
+    // ตัวอย่างวันที่ "ยกเลิกโดยเจ้าหน้าที่": ไม่มี key '2026-08-12' อยู่เลย -> กดจองไม่ได้ เหมือนวันที่ไม่มีรอบอบรม
+  };
 
   let trainingSessions = {}; // จะถูกเติมจาก fetch(DATA_URL) หรือ mock ด้านบน
 
