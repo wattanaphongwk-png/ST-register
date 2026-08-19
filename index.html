@@ -149,22 +149,6 @@
     font-size:11px;color:var(--ink-soft);margin-top:2px;display:flex;align-items:center;gap:5px;
   }
   .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;}
-
-  /* ===== ตัวเลือกรอบ เมื่อวันเดียวมีหลายคอร์ส ===== */
-  .course-choices{display:none;flex-direction:column;gap:6px;margin-bottom:10px;}
-  .course-choices.show{display:flex;}
-  .course-choice{
-    text-align:left;border:1px solid var(--line);border-radius:9px;padding:9px 12px;
-    background:#fff;cursor:pointer;font-family:inherit;font-size:12px;color:var(--ink);
-  }
-  .course-choice b{display:block;font-size:13px;margin-bottom:1px;}
-  .course-choice.full{
-    background:var(--danger-soft);color:var(--danger);cursor:not-allowed;opacity:.75;
-  }
-  .course-choice.picked{
-    background:var(--accent);color:#fff;border-color:var(--accent);
-  }
-  .course-choice.picked b{color:#fff;}
 </style>
 </head>
 <body>
@@ -275,26 +259,26 @@
 
   /* =========================================================================
      ข้อมูลรอบอบรม ดึงจากไฟล์ JSON ที่ Power Automate สร้างจาก SharePoint list "TrainingSlots"
-     กติกา: 1 วัน มีรอบอบรมได้แค่ 1 อย่างเท่านั้น จึงเก็บเป็น "1 key ต่อวันที่ = 1 session" ตรง ๆ
+     ใช้ชื่อคอลัมน์ตรงจาก SharePoint เป๊ะ ๆ ไม่มีการแปลงชื่อฟิลด์ใด ๆ เลย:
+     TrainingDate (เป็น key), CourseCode, CourseName, Time, TotalSeats, BookedSeats, SlotStatus
 
      {
-       "2026-08-11": { "course":"อบรมความปลอดภัย รุ่น 22", "courseCode":"ST-022", "time":"09:00-12:00", "seatsLeft":20, "seatsTotal":20, "status":"open" }
+       "2026-08-20": { "CourseCode":"ST-023", "CourseName":"อบรมความปลอดภัย", "Time":"09.00-12.00", "TotalSeats":20, "BookedSeats":3, "SlotStatus":"เปิดรับ" }
      }
 
-     status: 'open' = SlotStatus "เปิดรับ" (เขียว) | 'full' = SlotStatus "ปิดรับ" (แดง)
-     รอบที่ SlotStatus = "ยกเลิก" (ปิดเองโดยเจ้าหน้าที่) ต้องถูก "กรองไม่ส่งออกมาเลย" ตั้งแต่ฝั่ง
-     Power Automate เพื่อให้วันนั้นกลับไปเป็นวันปกติที่กดจองไม่ได้ เหมือนวันที่ไม่มีรอบอบรม
-    ========================================================================= */
+     SlotStatus: 'เปิดรับ' = เขียว กดจองได้ | 'ปิดรับ' = แดง กดไม่ได้ (แต่ยังโชว์ เพราะมีรอบอบรมอยู่)
+     รอบที่ SlotStatus = 'ยกเลิก' (ปิดเองโดยเจ้าหน้าที่) ต้อง "ข้ามไปเลย ไม่ใส่ลง trainingSessions"
+     เพื่อให้วันนั้นกลับไปเป็นวันปกติที่กดจองไม่ได้ เหมือนวันที่ไม่มีรอบอบรม (ดู loadTrainingSessions ด้านล่าง)
+  ========================================================================= */
+  const DATA_URL = ''; // ใส่ URL ไฟล์ training-sessions.json ที่ Power Automate สร้าง/อัปเดตไว้ตรงนี้
 
-
-  const DATA_URL = 'https://1drv.ms/u/c/8cc8fc6d28088b50/IQADEiR5fHuTQaR-hZHmInZAAYtHzDN_nc9rJg-Jq4J7TfI?e=WGBAvj?download=1;
-
-  const mockTrainingSessions = {
-    '2026-08-10': { course: 'อบรมความปลอดภัย รุ่น 21', courseCode: 'ST-021', time: '09:00-12:00', seatsLeft: 100, seatsTotal: 100, status: 'open' },
-    '2026-08-15': { course: 'อบรมความปลอดภัย รุ่น 22', courseCode: 'ST-022', time: '09:00-12:00', seatsLeft: 20,  seatsTotal: 20,  status: 'open' },
-    '2026-08-20': { course: 'อบรมความปลอดภัย รุ่น 24', courseCode: 'ST-024', time: '09:00-12:00', seatsLeft: 0,   seatsTotal: 1,   status: 'full' },
-    // ตัวอย่างวันที่ "ยกเลิกโดยเจ้าหน้าที่": ไม่มี key '2026-08-12' อยู่เลย -> กดจองไม่ได้ เหมือนวันที่ไม่มีรอบอบรม
-  };
+  // ข้อมูลจำลองไว้ทดสอบหน้าเว็บ ก่อนต่อ DATA_URL จริง (โครงเดียวกับที่ Power Automate จะส่งมา)
+  const mockRawTrainingData = [
+    { TrainingDate: '2026-08-20', CourseCode: 'ST-023', CourseName: 'อบรมความปลอดภัย', Time: '09.00-12.00', TotalSeats: 20, BookedSeats: 3,  SlotStatus: 'เปิดรับ' },
+    { TrainingDate: '2026-08-21', CourseCode: 'ST-024', CourseName: 'อบรมความปลอดภัย', Time: '09.00-12.00', TotalSeats: 20, BookedSeats: 20, SlotStatus: 'ปิดรับ' },
+    { TrainingDate: '2026-08-25', CourseCode: 'ST-025', CourseName: 'อบรมความปลอดภัย', Time: '09.00-12.00', TotalSeats: 20, BookedSeats: 3,  SlotStatus: 'ยกเลิก' },
+    // ตัวอย่างวันที่ "ยกเลิกโดยเจ้าหน้าที่" (25/08): แม้ยังมีที่นั่งว่าง ก็จะไม่โชว์ในปฏิทินเลย เพราะ SlotStatus = 'ยกเลิก'
+  ];
 
   let trainingSessions = {}; // จะถูกเติมจาก fetch(DATA_URL) หรือ mock ด้านบน
 
@@ -327,47 +311,28 @@
   }
 
   async function loadTrainingSessions(){
-      if(DATA_URL){
-        try{
-          const res = await fetch(DATA_URL, { cache: 'no-store' });
-          const rawData = await res.json();
-          
-          trainingSessions = {}; // ล้างค่าเดิมก่อน
-  
-          // แปลงโครงสร้างจาก Array [...] ให้กลายเป็น Object {"YYYY-MM-DD": {...}}
-          if(Array.isArray(rawData)){
-            rawData.forEach(item => {
-              if(item.date){
-                // ดึงค่าเวลา (รองรับทั้งที่เป็นข้อความธรรมดา หรือก้อน { Value: '...' })
-                let timeStr = '';
-                if (item.time && typeof item.time === 'object') {
-                  timeStr = item.time.Value || item.time.value || '';
-                } else {
-                  timeStr = item.time || '';
-                }
-  
-                trainingSessions[item.date] = {
-                  course: item.course || 'อบรมความปลอดภัยผู้รับเหมา 3 ชม.',
-                  courseCode: item.courseCode || '',
-                  time: timeStr,
-                  seatsLeft: Number(item.seatsLeft) || 0,
-                  seatsTotal: Number(item.seatsTotal) || 0,
-                  status: item.status || (item.seatsLeft > 0 ? 'open' : 'full')
-                };
-              }
-            });
-          } else {
-            trainingSessions = rawData;
-          }
-        }catch(err){
-          console.error('โหลดข้อมูลรอบอบรมจริงไม่สำเร็จ ใช้ข้อมูลจำลองแทน', err);
-          trainingSessions = mockTrainingSessions;
-        }
-      } else {
-        trainingSessions = mockTrainingSessions;
+    let rawData;
+    if(DATA_URL){
+      try{
+        const res = await fetch(DATA_URL, { cache: 'no-store' });
+        rawData = await res.json(); // คาดว่าเป็นอาร์เรย์ของ object ตามชื่อคอลัมน์ SharePoint เหมือน mockRawTrainingData
+      }catch(err){
+        console.error('โหลดข้อมูลรอบอบรมจริงไม่สำเร็จ ใช้ข้อมูลจำลองแทน', err);
+        rawData = mockRawTrainingData;
       }
-      renderCalendar();
+    } else {
+      rawData = mockRawTrainingData;
     }
+
+    // แปลงอาร์เรย์ดิบ -> object ค้นหาด้วยวันที่ (key = TrainingDate) และ "ข้าม" แถวที่ยกเลิกไปเลย
+    trainingSessions = {};
+    rawData.forEach(item => {
+      if(item.SlotStatus === 'ยกเลิก') return; // ข้าม -> วันนั้นจะไม่มีข้อมูลอยู่เลย เหมือนวันว่าง
+      trainingSessions[item.TrainingDate] = item; // เก็บ object ทั้งก้อนตามชื่อคอลัมน์เดิม ไม่แปลงชื่อ
+    });
+
+    renderCalendar();
+  }
 
   function renderCalendar(){
     calTitle.textContent = `${monthLabels[viewMonth]} ${viewYear + 543}`;
@@ -403,9 +368,11 @@
         // วันที่ผ่านไปแล้ว: กดไม่ได้เสมอ ไม่ว่าจะเคยมีรอบเปิดหรือไม่ก็ตาม
         cell.classList.add('past');
       } else if(session){
-        const isFull = session.status === 'full';
-        cell.classList.add(isFull ? 'full' : 'open');
-        if(!isFull){
+        // ==== จุดตัดสินสี: อ่านตรงจาก SlotStatus เลย ไม่ต้องแปลงเป็น open/full เอง ====
+        if(session.SlotStatus === 'ปิดรับ'){
+          cell.classList.add('full'); // แดง กดไม่ได้ (แต่ยังโชว์ เพราะมีรอบอบรมอยู่)
+        } else if(session.SlotStatus === 'เปิดรับ'){
+          cell.classList.add('open'); // เขียว กดได้
           cell.addEventListener('click', () => selectDate(key));
         }
       }
@@ -423,7 +390,7 @@
   function selectDate(key){
     selectedDate = key;
     const s = trainingSessions[key];
-    sessionInfo.innerHTML = `<b>${s.course}</b>วันที่ ${toMMDDYYYY(key)} · ${s.time} · เหลือที่นั่ง ${s.seatsLeft}/${s.seatsTotal}`;
+    sessionInfo.innerHTML = `<b>${s.CourseName} (${s.CourseCode})</b>วันที่ ${toMMDDYYYY(key)} · ${s.Time} · เหลือที่นั่ง ${s.TotalSeats - s.BookedSeats}/${s.TotalSeats}`;
     sessionInfo.classList.add('show');
     noSelection.style.display = 'none';
     renderCalendar();
@@ -510,7 +477,7 @@
     }
 
     const session = trainingSessions[trainingDate];
-    if(!session || session.status === 'full'){
+    if(!session || session.SlotStatus !== 'เปิดรับ'){
       alert('รอบที่เลือกเต็มหรือไม่พร้อมให้จองแล้ว กรุณาเลือกวันที่อื่น');
       return;
     }
@@ -524,7 +491,7 @@
     const payload = {
       regisCode, companyName, workUnit, repName, repPhone, repEmail,
       trainingDate: trainingDateFormatted,
-      course: session.course, courseCode: session.courseCode, time: session.time,
+      CourseName: session.CourseName, CourseCode: session.CourseCode, Time: session.Time,
       participants: validNames.map((n, i) => ({ name: n, staffPermit: validPermits[i] })),
     };
 
@@ -546,7 +513,7 @@
     params.set(FORM_CONFIG.fields.repPhone,      repPhone);
     params.set(FORM_CONFIG.fields.repEmail,      repEmail);
     params.set(FORM_CONFIG.fields.trainingDate,  trainingDateFormatted);
-    params.set(FORM_CONFIG.fields.courseCode,    session.courseCode);
+    params.set(FORM_CONFIG.fields.courseCode,    session.CourseCode);
     params.set(FORM_CONFIG.fields.namesBlock,    namesBlock);
     params.set(FORM_CONFIG.fields.permitsBlock,  permitsBlock);
 
