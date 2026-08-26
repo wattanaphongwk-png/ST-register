@@ -507,19 +507,38 @@
       return;
     }
 
-    const params = new URLSearchParams();
-    params.set(FORM_CONFIG.fields.regisCode,     regisCode);
-    params.set(FORM_CONFIG.fields.companyName,  companyName);
-    params.set(FORM_CONFIG.fields.workUnit,      workUnit);
-    params.set(FORM_CONFIG.fields.repName,       repName);
-    params.set(FORM_CONFIG.fields.repPhone,      repPhone);
-    params.set(FORM_CONFIG.fields.repEmail,      repEmail);
-    params.set(FORM_CONFIG.fields.trainingDate,  trainingDateFormatted);
-    params.set(FORM_CONFIG.fields.courseCode,    session.CourseCode);
-    params.set(FORM_CONFIG.fields.namesBlock,    namesBlock);
-    params.set(FORM_CONFIG.fields.permitsBlock,  permitsBlock);
+    /* ---------------------------------------------------------------------
+       สร้าง Query String สำหรับส่งค่าเข้า Microsoft Forms (Pre-filled Link)
 
-    window.location.href = `${FORM_CONFIG.baseUrl}&${params.toString()}`;
+       หมายเหตุสำคัญ: ไม่ใช้ URLSearchParams ในส่วนนี้
+       เนื่องจาก URLSearchParams เข้ารหัสข้อมูลตามมาตรฐาน
+       application/x-www-form-urlencoded ซึ่งกำหนดให้แปลง "ช่องว่าง" เป็น
+       เครื่องหมายบวก (+) แต่ Microsoft Forms ถอดรหัสพารามิเตอร์ตามมาตรฐาน
+       Percent-encoding (RFC 3986) ที่ไม่รู้จักความหมายพิเศษของ (+)
+       จึงแสดงผลเป็นเครื่องหมายบวกค้างอยู่ในช่องกรอก เช่น "สมชาย+ใจดี"
+       และค่าที่ผิดนี้จะถูกบันทึกลง SharePoint ต่อไปโดยไม่มีการแจ้งเตือน
+
+       จึงเปลี่ยนมาประกอบ Query String เองด้วย encodeURIComponent()
+       ซึ่งเข้ารหัสช่องว่างเป็น %20 ตรงตามมาตรฐานที่ Microsoft Forms รองรับ
+    --------------------------------------------------------------------- */
+    const formParams = [
+      [FORM_CONFIG.fields.regisCode,     regisCode],
+      [FORM_CONFIG.fields.companyName,   companyName],
+      [FORM_CONFIG.fields.workUnit,      workUnit],
+      [FORM_CONFIG.fields.repName,       repName],
+      [FORM_CONFIG.fields.repPhone,      repPhone],
+      [FORM_CONFIG.fields.repEmail,      repEmail],
+      [FORM_CONFIG.fields.trainingDate,  trainingDateFormatted],
+      [FORM_CONFIG.fields.courseCode,    session.CourseCode],
+      [FORM_CONFIG.fields.namesBlock,    namesBlock],
+      [FORM_CONFIG.fields.permitsBlock,  permitsBlock],
+    ];
+
+    const queryString = formParams
+      .map(([fieldId, value]) => `${fieldId}=${encodeURIComponent(value)}`)
+      .join('&');
+
+    window.location.href = `${FORM_CONFIG.baseUrl}&${queryString}`;
   });
 </script>
 </body>
