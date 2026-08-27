@@ -270,7 +270,11 @@
      รอบที่ SlotStatus = 'ยกเลิก' (ปิดเองโดยเจ้าหน้าที่) ต้อง "ข้ามไปเลย ไม่ใส่ลง trainingSessions"
      เพื่อให้วันนั้นกลับไปเป็นวันปกติที่กดจองไม่ได้ เหมือนวันที่ไม่มีรอบอบรม (ดู loadTrainingSessions ด้านล่าง)
   ========================================================================= */
-  const DATA_URL = ''; // ใส่ URL ไฟล์ training-sessions.json ที่ Power Automate สร้าง/อัปเดตไว้ตรงนี้
+    /* ที่อยู่ไฟล์ข้อมูลรอบอบรม
+     ใช้ path แบบสัมพัทธ์เพื่ออ่านไฟล์ที่อยู่โฟลเดอร์เดียวกัน (same-origin)
+     จึงไม่ติดข้อจำกัด CORS เหมือนการเรียกข้ามโดเมน
+     หากในอนาคตสามารถเข้าถึงไฟล์บน SharePoint ได้ ให้เปลี่ยนเป็น URL ของไฟล์นั้นแทน */
+  const DATA_URL = './training-sessions.json';
 
   // ข้อมูลจำลองไว้ทดสอบหน้าเว็บ ก่อนต่อ DATA_URL จริง (โครงเดียวกับที่ Power Automate จะส่งมา)
   const mockRawTrainingData = [
@@ -313,26 +317,41 @@
 
   async function loadTrainingSessions(){
     let rawData;
-    if(DATA_URL){
-      try{
-        const res = await fetch(DATA_URL, { cache: 'no-store' });
-        rawData = await res.json(); // คาดว่าเป็นอาร์เรย์ของ object ตามชื่อคอลัมน์ SharePoint เหมือน mockRawTrainingData
-      }catch(err){
-        console.error('โหลดข้อมูลรอบอบรมจริงไม่สำเร็จ ใช้ข้อมูลจำลองแทน', err);
-        rawData = mockRawTrainingData;
+
+    try{
+      /* ต่อท้าย URL ด้วยเวลาปัจจุบัน เพื่อบังคับให้โหลดไฟล์ใหม่ทุกครั้ง
+         ป้องกันกรณีเบราว์เซอร์หรือ CDN ของ GitHub Pages เก็บไฟล์เวอร์ชันเก่าไว้ */
+      const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      rawData = await res.json();
+      if(!Array.isArray(rawData) || rawData.length === 0){
+        throw new Error('ไฟล์ข้อมูลว่างเปล่าหรือรูปแบบไม่ถูกต้อง');
       }
-    } else {
+    }catch(err){
+      /* แจ้งเตือนแบบมองเห็นได้ ไม่ใช่แค่บันทึกลง console
+         เพราะหากล้มเหลวโดยเงียบ ผู้ใช้จะเห็นข้อมูลจำลองโดยเข้าใจว่าเป็นข้อมูลจริง
+         แล้วลงทะเบียนผิดวันโดยไม่รู้ตัว */
+      console.error('โหลดข้อมูลรอบอบรมไม่สำเร็จ', err);
+      showDataWarning();
       rawData = mockRawTrainingData;
     }
 
-    // แปลงอาร์เรย์ดิบ -> object ค้นหาด้วยวันที่ (key = TrainingDate) และ "ข้าม" แถวที่ยกเลิกไปเลย
     trainingSessions = {};
     rawData.forEach(item => {
-      if(item.SlotStatus === 'ยกเลิก') return; // ข้าม -> วันนั้นจะไม่มีข้อมูลอยู่เลย เหมือนวันว่าง
-      trainingSessions[item.TrainingDate] = item; // เก็บ object ทั้งก้อนตามชื่อคอลัมน์เดิม ไม่แปลงชื่อ
+      if(item.SlotStatus === 'ยกเลิก') return;
+      trainingSessions[item.TrainingDate] = item;
     });
 
     renderCalendar();
+  }
+
+  // แถบเตือนสีแดงเหนือปฏิทิน แสดงเมื่ออ่านไฟล์ข้อมูลจริงไม่ได้
+  function showDataWarning(){
+    const bar = document.createElement('div');
+    bar.style.cssText = 'background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.5;';
+    bar.innerHTML = '<b>ไม่สามารถโหลดข้อมูลรอบอบรมล่าสุดได้</b><br>วันที่ที่แสดงอยู่อาจไม่ตรงกับความเป็นจริง กรุณาติดต่อเจ้าหน้าที่ก่อนลงทะเบียน';
+    document.querySelector('.cal-header').before(bar);
   }
 
   function renderCalendar(){
