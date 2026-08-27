@@ -149,6 +149,12 @@
     font-size:11px;color:var(--ink-soft);margin-top:2px;display:flex;align-items:center;gap:5px;
   }
   .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;}
+
+  /* แถบเตือนเมื่ออ่านไฟล์ข้อมูลรอบอบรมไม่สำเร็จ */
+  .data-warning{
+    background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger);
+    border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.5;
+  }
 </style>
 </head>
 <body>
@@ -179,7 +185,7 @@
 
     <div class="session-info" id="sessionInfo"></div>
     <p class="no-selection" id="noSelection">ยังไม่ได้เลือกวันที่</p>
-    <p class="sync-note"><span class="sync-dot"></span>วันที่เปิดอบรมดึงมาจากไฟล์ที่ Power Automate สร้างจาก SharePoint อัตโนมัติ</p>
+    <p class="sync-note"><span class="sync-dot"></span>หากวันที่ไม่ตรงกับที่แจ้งไว้ กรุณาติดต่อเจ้าหน้าที่ก่อนลงทะเบียน</p>
   </div>
 
   <!-- ===== 2. ข้อมูลบริษัทและตัวแทน ===== -->
@@ -235,62 +241,84 @@
 
 <script>
   /* =========================================================================
-     ตั้งค่าลิงก์ Microsoft Forms ตรงนี้
-     วิธีหา field id: เปิดฟอร์ม -> "..." -> Get pre-filled link ->
-     กรอกค่าตัวอย่างในทุกช่อง -> Forms จะสร้าง URL ให้ -> คัดลอกรหัสแต่ละ r... มาใส่
-     (ตั้งชื่อ key เป็นชื่อความหมายไว้แล้ว แก้ไขแค่ค่าฝั่งขวาของแต่ละบรรทัดได้เลย
-      ไม่ต้องยุ่งกับส่วนอื่นของโค้ด)
+     ตั้งค่าลิงก์ Microsoft Forms
+
+     วิธีหา field id: เปิดฟอร์ม → "..." → Get pre-filled link →
+     กรอกค่าตัวอย่างในทุกช่อง (แม้ข้อที่ไม่บังคับตอบ ไม่งั้น field id ของข้อนั้น
+     จะไม่ติดมาใน URL) → คัดลอกรหัส r... ของแต่ละช่องมาใส่
+
+     แก้ไขเฉพาะค่าฝั่งขวาของแต่ละบรรทัด ไม่ต้องยุ่งกับส่วนอื่นของโค้ด
   ========================================================================= */
   const FORM_CONFIG = {
     baseUrl: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=56X98qEuDUWfwSr1-GMAlUucuOBE0B9BnJBrzNrmW-tUQzY3RUs0NUkyMjdTTUZRN1VBNFAwNk41VS4u',
     fields: {
-      regisCode:     'rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // TODO: ใส่ field id ของช่อง RegisCode ใน Forms (เพิ่มช่องนี้ในฟอร์มก่อน ถ้ายังไม่มี)
       companyName:   'r346f476d1e5b4f6488a28be851e9e330', // ชื่อบริษัท
       workUnit:      'r800c1875abf84a39b1f8c42ff9f44165', // หน่วยงานที่ปฏิบัติงาน
       repName:       'r37798da71f744485bb6ae94a8a3c7c2f', // ชื่อตัวแทน (ผู้จอง)
       repPhone:      'r5dcd82cb623c41ddb65326e082ad956b', // เบอร์โทรผู้จอง
       repEmail:      'r189d0aba93544ff4ac9c6ae66741274f', // อีเมลรับไฟล์บัตร
       trainingDate:  'r3a725badb770406193ef77a653b14469', // วันที่เข้าอบรม (ส่งเป็น MM/DD/YYYY)
-      courseCode:    'r2efee07518bf46ea88addbc58dd70e6e', // รหัสคอร์ส (เช่น ST001)
+      courseCode:    'r2efee07518bf46ea88addbc58dd70e6e', // รหัสคอร์ส (เช่น ST-049)
       namesBlock:    'r69c21c71a7094a4db58405bae2397d8c', // รายชื่อผู้เข้าอบรม (บรรทัดละ 1 คน)
-      permitsBlock:  'r73ecfef169e445f19499bb753d31a502', // เลข Staff Permit (เรียงบรรทัดตรงกับชื่อ ช่องว่างได้ถ้าไม่กรอก)
+      permitsBlock:  'r73ecfef169e445f19499bb753d31a502', // เลข Staff Permit (เรียงบรรทัดตรงกับชื่อ)
     }
   };
 
   /* =========================================================================
-     ข้อมูลรอบอบรม ดึงจากไฟล์ JSON ที่ Power Automate สร้างจาก SharePoint list "TrainingSlots"
-     ใช้ชื่อคอลัมน์ตรงจาก SharePoint เป๊ะ ๆ ไม่มีการแปลงชื่อฟิลด์ใด ๆ เลย:
-     TrainingDate (เป็น key), CourseCode, CourseName, Time, TotalSeats, BookedSeats, SlotStatus
+     ข้อมูลรอบอบรม — ที่มาและวิธีอัปเดต
 
-     {
-       "2026-08-20": { "CourseCode":"ST-023", "CourseName":"อบรมความปลอดภัย", "Time":"09.00-12.00", "TotalSeats":20, "BookedSeats":3, "SlotStatus":"เปิดรับ" }
-     }
+     ข้อมูลต้นทางอยู่ใน SharePoint list "TrainingSlots" ของหน่วยงาน
+     หน้าเว็บนี้ไม่ได้เชื่อมต่อกับ SharePoint โดยตรง เพราะองค์กรปิดการแชร์ไฟล์
+     ออกสู่ภายนอกทั้งระบบ และผู้รับเหมาไม่มีบัญชีสำหรับเข้าสู่ระบบ
+     ข้อมูลจึงต้องถูกนำออกมาด้วยมือเป็นรอบ ๆ ไม่ใช่การซิงค์แบบเรียลไทม์
 
-     SlotStatus: 'เปิดรับ' = เขียว กดจองได้ | 'ปิดรับ' = แดง กดไม่ได้ (แต่ยังโชว์ เพราะมีรอบอบรมอยู่)
-     รอบที่ SlotStatus = 'ยกเลิก' (ปิดเองโดยเจ้าหน้าที่) ต้อง "ข้ามไปเลย ไม่ใส่ลง trainingSessions"
-     เพื่อให้วันนั้นกลับไปเป็นวันปกติที่กดจองไม่ได้ เหมือนวันที่ไม่มีรอบอบรม (ดู loadTrainingSessions ด้านล่าง)
+     ลำดับการทำงานจริง
+       1. เจ้าหน้าที่แก้ไขข้อมูลรอบอบรมใน SharePoint
+       2. Power Automate สร้างไฟล์ training-sessions.json ขึ้นใหม่ทันที
+          แล้วส่งเนื้อหาไฟล์ทางอีเมลมาให้เจ้าหน้าที่
+       3. เจ้าหน้าที่คัดลอกเนื้อหาจากอีเมล ไปวางทับในไฟล์ training-sessions.json
+          ที่อยู่โฟลเดอร์เดียวกับหน้าเว็บนี้ แล้วบันทึก (Commit)
+       4. หน้าเว็บอ่านไฟล์นั้นทุกครั้งที่มีคนเปิด
+
+     ดังนั้นข้อมูลจะใหม่แค่ไหน ขึ้นอยู่กับว่าเจ้าหน้าที่วางข้อมูลล่าสุดหรือยัง
+     ไม่ได้อัปเดตตามตัวเองโดยอัตโนมัติ
+
+     รูปแบบข้อมูล: อาร์เรย์ของ object ใช้ชื่อฟิลด์ตรงกับคอลัมน์ใน SharePoint ทุกตัว
+       TrainingDate, CourseCode, CourseName, Time, TotalSeats, BookedSeats, SlotStatus
+
+     ความหมายของ SlotStatus
+       "เปิดรับ" → แสดงเป็นสีเขียว กดจองได้
+       "ปิดรับ"  → แสดงเป็นสีแดง กดไม่ได้ (ที่นั่งเต็ม แต่ยังมีรอบอบรมอยู่จริง)
+       "ยกเลิก"  → Power Automate กรองออกตั้งแต่ต้น จะไม่มีอยู่ในไฟล์เลย
+                   ทำให้วันนั้นกลับไปเป็นวันธรรมดาที่กดไม่ได้โดยอัตโนมัติ
+                   (ไม่ต้องเขียนเงื่อนไขแยกในหน้าเว็บ)
   ========================================================================= */
-    /* ที่อยู่ไฟล์ข้อมูลรอบอบรม
-     ใช้ path แบบสัมพัทธ์เพื่ออ่านไฟล์ที่อยู่โฟลเดอร์เดียวกัน (same-origin)
-     จึงไม่ติดข้อจำกัด CORS เหมือนการเรียกข้ามโดเมน
-     หากในอนาคตสามารถเข้าถึงไฟล์บน SharePoint ได้ ให้เปลี่ยนเป็น URL ของไฟล์นั้นแทน */
   const DATA_URL = './training-sessions.json';
 
-  // ข้อมูลจำลองไว้ทดสอบหน้าเว็บ ก่อนต่อ DATA_URL จริง (โครงเดียวกับที่ Power Automate จะส่งมา)
-  const mockRawTrainingData = [
-  {"TrainingDate":"2026-08-31","CourseCode":"ST-049","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":1.0,"SlotStatus":"เปิดรับ"},
-  {"TrainingDate":"2026-09-14","CourseCode":"ST-051","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":50.0,"BookedSeats":null,"SlotStatus":"เปิดรับ"},
-  {"TrainingDate":"2026-09-21","CourseCode":"ST-052","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":10.0,"BookedSeats":1.0,"SlotStatus":"เปิดรับ"},
-  {"TrainingDate":"2026-09-28","CourseCode":"ST-053","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":5.0,"BookedSeats":2.0,"SlotStatus":"ปิดรับ"},
-  {"TrainingDate":"2026-09-11","CourseCode":"ST-054","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":50.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"}
-]
+  /* ข้อมูลสำรอง ใช้เฉพาะกรณีอ่านไฟล์ข้างต้นไม่สำเร็จเท่านั้น
 
-  let trainingSessions = {}; // จะถูกเติมจาก fetch(DATA_URL) หรือ mock ด้านบน
+     ห้ามลบทิ้ง เพราะเป็นตัวกันไม่ให้หน้าเว็บว่างเปล่าเมื่อไฟล์หายหรือเสีย
+     แต่ก็ห้ามใช้เป็นที่อัปเดตข้อมูลด้วย เพราะเมื่อใดที่หน้าเว็บใช้ข้อมูลชุดนี้
+     ระบบจะแสดงแถบเตือนสีแดงให้ผู้ใช้เห็นเสมอว่าข้อมูลอาจไม่ตรงกับความจริง */
+  const mockRawTrainingData = [
+    {"TrainingDate":"2026-08-31","CourseCode":"ST-049","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100,"BookedSeats":1,"SlotStatus":"เปิดรับ"},
+    {"TrainingDate":"2026-09-11","CourseCode":"ST-054","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":50,"BookedSeats":0,"SlotStatus":"เปิดรับ"},
+    {"TrainingDate":"2026-09-14","CourseCode":"ST-051","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":50,"BookedSeats":5,"SlotStatus":"เปิดรับ"},
+    {"TrainingDate":"2026-09-21","CourseCode":"ST-052","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":10,"BookedSeats":1,"SlotStatus":"เปิดรับ"},
+    {"TrainingDate":"2026-09-28","CourseCode":"ST-053","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":5,"BookedSeats":2,"SlotStatus":"ปิดรับ"}
+  ];
+
+  let trainingSessions = {}; // เติมค่าโดย loadTrainingSessions() ใช้ TrainingDate เป็น key
 
   const dowLabels = ['อา','จ','อ','พ','พฤ','ศ','ส'];
   const monthLabels = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-  let viewYear = 2026, viewMonth = 7; // เริ่มที่สิงหาคม 2026
+  /* เปิดปฏิทินที่เดือนปัจจุบันเสมอ
+     ไม่กำหนดเดือนตายตัวไว้ในโค้ด เพราะเมื่อเวลาผ่านไปผู้ใช้จะเปิดมาเจอ
+     เดือนที่ผ่านมาแล้วและต้องกดลูกศรเลื่อนเอง */
+  const todayRef = new Date();
+  let viewYear = todayRef.getFullYear();
+  let viewMonth = todayRef.getMonth();
   let selectedDate = null; // 'YYYY-MM-DD'
 
   const calGrid = document.getElementById('calGrid');
@@ -301,18 +329,18 @@
   function pad(n){ return String(n).padStart(2,'0'); }
   function dateKey(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
 
-  // แปลง 'YYYY-MM-DD' -> 'MM/DD/YYYY' สำหรับส่งเข้า Forms/SharePoint ตามที่กำหนด
+  // แปลง 'YYYY-MM-DD' เป็น 'MM/DD/YYYY' ตามรูปแบบที่ Microsoft Forms และ SharePoint รับ
   function toMMDDYYYY(isoDateKey){
     const [y, m, d] = isoDateKey.split('-');
     return `${m}/${d}/${y}`;
   }
 
-  // สร้างรหัสการจอง (RegisCode) ใหม่ทุกครั้งที่กดส่งฟอร์ม ใช้ผูกผู้เข้าอบรมทุกคนในใบจองเดียวกันเข้าด้วยกัน
-  // รูปแบบ: REG-YYYYMMDD-XXXX (XXXX = เลขสุ่ม กันชนกันกรณีจองพร้อมกันวันเดียวกัน)
-  function generateRegisCode(isoDateKey){
-    const ymd = isoDateKey.replace(/-/g, '');
-    const rand = Math.floor(1000 + Math.random() * 9000);
-    return `REG-${ymd}-${rand}`;
+  /* แปลงค่าที่นั่งเป็นตัวเลขก่อนใช้งานเสมอ
+     คอลัมน์ตัวเลขใน SharePoint ที่ยังไม่เคยกรอกจะมีค่าเป็น null ไม่ใช่ 0
+     ถ้านำไปลบกันตรง ๆ จะได้ผลลัพธ์เป็น NaN แล้วแสดงผลว่า "เหลือที่นั่ง NaN" */
+  function toNumber(value){
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
   }
 
   async function loadTrainingSessions(){
@@ -320,7 +348,8 @@
 
     try{
       /* ต่อท้าย URL ด้วยเวลาปัจจุบัน เพื่อบังคับให้โหลดไฟล์ใหม่ทุกครั้ง
-         ป้องกันกรณีเบราว์เซอร์หรือ CDN ของ GitHub Pages เก็บไฟล์เวอร์ชันเก่าไว้ */
+         ป้องกันกรณีเบราว์เซอร์หรือระบบแคชของ GitHub Pages
+         เก็บไฟล์เวอร์ชันเก่าไว้แล้วแสดงวันที่ที่ถูกแก้ไปแล้ว */
       const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -329,8 +358,8 @@
         throw new Error('ไฟล์ข้อมูลว่างเปล่าหรือรูปแบบไม่ถูกต้อง');
       }
     }catch(err){
-      /* แจ้งเตือนแบบมองเห็นได้ ไม่ใช่แค่บันทึกลง console
-         เพราะหากล้มเหลวโดยเงียบ ผู้ใช้จะเห็นข้อมูลจำลองโดยเข้าใจว่าเป็นข้อมูลจริง
+      /* แจ้งเตือนให้ผู้ใช้มองเห็น ไม่ใช่แค่บันทึกลง console
+         เพราะหากล้มเหลวโดยเงียบ ผู้ใช้จะเห็นข้อมูลสำรองโดยเข้าใจว่าเป็นข้อมูลจริง
          แล้วลงทะเบียนผิดวันโดยไม่รู้ตัว */
       console.error('โหลดข้อมูลรอบอบรมไม่สำเร็จ', err);
       showDataWarning();
@@ -339,17 +368,15 @@
 
     trainingSessions = {};
     rawData.forEach(item => {
-      if(item.SlotStatus === 'ยกเลิก') return;
       trainingSessions[item.TrainingDate] = item;
     });
 
     renderCalendar();
   }
 
-  // แถบเตือนสีแดงเหนือปฏิทิน แสดงเมื่ออ่านไฟล์ข้อมูลจริงไม่ได้
   function showDataWarning(){
     const bar = document.createElement('div');
-    bar.style.cssText = 'background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.5;';
+    bar.className = 'data-warning';
     bar.innerHTML = '<b>ไม่สามารถโหลดข้อมูลรอบอบรมล่าสุดได้</b><br>วันที่ที่แสดงอยู่อาจไม่ตรงกับความเป็นจริง กรุณาติดต่อเจ้าหน้าที่ก่อนลงทะเบียน';
     document.querySelector('.cal-header').before(bar);
   }
@@ -373,32 +400,33 @@
 
     for(let d = 1; d <= daysInMonth; d++){
       const key = dateKey(viewYear, viewMonth, d);
-      const session = trainingSessions[key]; // มีได้สูงสุด 1 รอบต่อวัน
+      const session = trainingSessions[key]; // หนึ่งวันมีได้สูงสุด 1 รอบ
       const cell = document.createElement('div');
       cell.textContent = d;
       cell.className = 'cal-day';
 
-      // เช็คว่าวันนี้ผ่านไปแล้วหรือยัง (เทียบกับวันที่ปัจจุบันจริงของเครื่อง ไม่ใช่วันที่ mock)
+      // เทียบกับวันที่จริงของเครื่องผู้ใช้ ไม่ใช่วันที่ในข้อมูล
       const cellDate = new Date(viewYear, viewMonth, d);
       const todayStart = new Date();
       todayStart.setHours(0,0,0,0);
       const isPast = cellDate < todayStart;
 
       if(isPast){
-        // วันที่ผ่านไปแล้ว: กดไม่ได้เสมอ ไม่ว่าจะเคยมีรอบเปิดหรือไม่ก็ตาม
+        // วันที่ผ่านไปแล้วกดไม่ได้เสมอ ไม่ว่าจะเคยมีรอบเปิดหรือไม่
         cell.classList.add('past');
       } else if(session){
-        // ==== จุดตัดสินสี: อ่านตรงจาก SlotStatus เลย ไม่ต้องแปลงเป็น open/full เอง ====
+        // ตัดสินสีจาก SlotStatus โดยตรง ไม่ต้องแปลงเป็นสถานะอื่นก่อน
         if(session.SlotStatus === 'ปิดรับ'){
-          cell.classList.add('full'); // แดง กดไม่ได้ (แต่ยังโชว์ เพราะมีรอบอบรมอยู่)
+          cell.classList.add('full');
         } else if(session.SlotStatus === 'เปิดรับ'){
-          cell.classList.add('open'); // เขียว กดได้
+          cell.classList.add('open');
           cell.addEventListener('click', () => selectDate(key));
         }
       }
-      // หมายเหตุ: วันที่ "ยกเลิก" โดยเจ้าหน้าที่ จะไม่มี key ใน trainingSessions เลย
-      // (Power Automate กรองไม่ส่งออกมาตั้งแต่ต้น) ทำให้ cell.className เป็นแค่ 'cal-day' เฉยๆ
-      // สีปกติ กดไม่ได้ เหมือนวันที่ไม่มีรอบอบรมเลย โดยอัตโนมัติ ไม่ต้องเขียน logic แยก
+      /* วันที่ถูกยกเลิกจะไม่มี key อยู่ใน trainingSessions เลย
+         (Power Automate กรองออกก่อนสร้างไฟล์) ทำให้ตกมาที่ค่าเริ่มต้น
+         คือสีปกติกดไม่ได้ เหมือนวันที่ไม่มีรอบอบรม */
+
       if(key === selectedDate){
         cell.classList.remove('open');
         cell.classList.add('selected');
@@ -410,7 +438,11 @@
   function selectDate(key){
     selectedDate = key;
     const s = trainingSessions[key];
-    sessionInfo.innerHTML = `<b>${s.CourseName} (${s.CourseCode})</b>วันที่ ${toMMDDYYYY(key)} · ${s.Time} · เหลือที่นั่ง ${s.TotalSeats - s.BookedSeats}/${s.TotalSeats}`;
+
+    const total  = toNumber(s.TotalSeats);
+    const booked = toNumber(s.BookedSeats);
+
+    sessionInfo.innerHTML = `<b>${s.CourseName} (${s.CourseCode})</b>วันที่ ${toMMDDYYYY(key)} · ${s.Time} · เหลือที่นั่ง ${total - booked}/${total}`;
     sessionInfo.classList.add('show');
     noSelection.style.display = 'none';
     renderCalendar();
@@ -467,21 +499,26 @@
 
   /* ===== ตรวจสอบและส่งข้อมูล ===== */
   document.getElementById('submitBtn').addEventListener('click', () => {
-    const companyName = document.getElementById('companyName').value.trim();
+    const companyName  = document.getElementById('companyName').value.trim();
     const workUnit     = document.getElementById('workUnit').value.trim();
     const repName      = document.getElementById('repName').value.trim();
     const repPhone     = document.getElementById('repPhone').value.trim();
     const repEmail     = document.getElementById('repEmail').value.trim();
-    const trainingDate = selectedDate; // 'YYYY-MM-DD' ภายในระบบ
+    const trainingDate = selectedDate; // 'YYYY-MM-DD' ที่ใช้ภายในระบบ
 
     const rows = Array.from(document.querySelectorAll('.participant-row'));
     const names = rows.map(r => r.querySelector('.participant-name').value.trim());
     const permits = rows.map(r => r.querySelector('.participant-permit').value.trim());
 
-    // เก็บเฉพาะแถวที่มีชื่อ (ตัดแถวว่างทิ้ง) แต่คงตำแหน่งคู่กันระหว่างชื่อ-เลข permit ไว้
+    // เก็บเฉพาะแถวที่มีชื่อ แต่คงตำแหน่งของชื่อกับเลข permit ให้ตรงกัน
     const validIndexes = names.map((n, i) => n.length > 0 ? i : -1).filter(i => i !== -1);
     const validNames   = validIndexes.map(i => names[i]);
-    const validPermits = validIndexes.map(i => permits[i] || '-'); // ใช้ "-" แทนค่าว่าง ป้องกัน Forms ตัดบรรทัดว่างท้ายข้อความทิ้ง
+
+    /* ใส่ "-" แทนค่าว่างเสมอ
+       เพราะ Microsoft Forms ตัดบรรทัดว่างท้ายข้อความทิ้ง ถ้าคนสุดท้ายไม่กรอก
+       เลข Staff Permit จำนวนบรรทัดของสองช่องจะไม่เท่ากัน แล้ว Power Automate
+       จะจับคู่ชื่อกับเลขผิดคน */
+    const validPermits = validIndexes.map(i => permits[i] || '-');
 
     if(!trainingDate){
       alert('กรุณาเลือกวันที่เข้าอบรมจากปฏิทินก่อน');
@@ -501,21 +538,21 @@
       alert('รอบที่เลือกเต็มหรือไม่พร้อมให้จองแล้ว กรุณาเลือกวันที่อื่น');
       return;
     }
-    const trainingDateFormatted = toMMDDYYYY(trainingDate); // ส่งเป็น MM/DD/YYYY ตามที่กำหนด
-    const regisCode = generateRegisCode(trainingDate); // รหัสผูกทุกคนในใบจองนี้เข้าด้วยกัน (คอลัมน์ RegisCode ใน TrainingRegistrations)
 
-    // รวมชื่อและ permit เป็นก้อนข้อความ คนละก้อน คั่นด้วยขึ้นบรรทัดใหม่ เรียงตำแหน่งตรงกัน
+    const trainingDateFormatted = toMMDDYYYY(trainingDate);
+
+    // รวมชื่อและเลข permit เป็นข้อความคนละก้อน คั่นด้วยการขึ้นบรรทัดใหม่ เรียงตำแหน่งตรงกัน
     const namesBlock   = validNames.join('\n');
     const permitsBlock = validPermits.join('\n');
 
     const payload = {
-      regisCode, companyName, workUnit, repName, repPhone, repEmail,
+      companyName, workUnit, repName, repPhone, repEmail,
       trainingDate: trainingDateFormatted,
       CourseName: session.CourseName, CourseCode: session.CourseCode, Time: session.Time,
       participants: validNames.map((n, i) => ({ name: n, staffPermit: validPermits[i] })),
     };
 
-    // แสดงตัวอย่างข้อมูลไว้เสมอ (โหมดทดสอบ / ตรวจสอบก่อนส่ง)
+    // แสดงข้อมูลที่จะส่งไว้เสมอ เพื่อให้ตรวจสอบได้ก่อนไปหน้าฟอร์ม
     const preview = document.getElementById('preview');
     preview.textContent = JSON.stringify(payload, null, 2);
     preview.classList.add('show');
@@ -528,19 +565,17 @@
     /* ---------------------------------------------------------------------
        สร้าง Query String สำหรับส่งค่าเข้า Microsoft Forms (Pre-filled Link)
 
-       หมายเหตุสำคัญ: ไม่ใช้ URLSearchParams ในส่วนนี้
-       เนื่องจาก URLSearchParams เข้ารหัสข้อมูลตามมาตรฐาน
-       application/x-www-form-urlencoded ซึ่งกำหนดให้แปลง "ช่องว่าง" เป็น
-       เครื่องหมายบวก (+) แต่ Microsoft Forms ถอดรหัสพารามิเตอร์ตามมาตรฐาน
-       Percent-encoding (RFC 3986) ที่ไม่รู้จักความหมายพิเศษของ (+)
-       จึงแสดงผลเป็นเครื่องหมายบวกค้างอยู่ในช่องกรอก เช่น "สมชาย+ใจดี"
-       และค่าที่ผิดนี้จะถูกบันทึกลง SharePoint ต่อไปโดยไม่มีการแจ้งเตือน
+       ไม่ใช้ URLSearchParams ในส่วนนี้ เนื่องจาก URLSearchParams เข้ารหัสข้อมูล
+       ตามมาตรฐาน application/x-www-form-urlencoded ซึ่งกำหนดให้แปลงช่องว่าง
+       เป็นเครื่องหมายบวก แต่ Microsoft Forms ถอดรหัสตามมาตรฐาน RFC 3986
+       ที่ไม่รู้จักความหมายพิเศษของเครื่องหมายบวก จึงแสดงผลเป็นเครื่องหมายบวก
+       ค้างอยู่ในช่องกรอก เช่น "สมชาย+ใจดี" และค่าที่ผิดนี้จะถูกบันทึกลง
+       SharePoint ต่อไปโดยไม่มีการแจ้งเตือนใด ๆ
 
-       จึงเปลี่ยนมาประกอบ Query String เองด้วย encodeURIComponent()
-       ซึ่งเข้ารหัสช่องว่างเป็น %20 ตรงตามมาตรฐานที่ Microsoft Forms รองรับ
+       จึงประกอบ Query String เองด้วย encodeURIComponent() ซึ่งเข้ารหัสช่องว่าง
+       เป็น %20 ตรงตามมาตรฐานที่ Microsoft Forms รองรับ
     --------------------------------------------------------------------- */
     const formParams = [
-      [FORM_CONFIG.fields.regisCode,     regisCode],
       [FORM_CONFIG.fields.companyName,   companyName],
       [FORM_CONFIG.fields.workUnit,      workUnit],
       [FORM_CONFIG.fields.repName,       repName],
