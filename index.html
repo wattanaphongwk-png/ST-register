@@ -150,6 +150,16 @@
   }
   .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;}
 
+  /* ช่องติ๊ก "ไม่มีอีเมล" */
+  .checkbox-line{
+    display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--ink-soft);
+    font-weight:500;margin:-6px 0 14px;cursor:pointer;line-height:1.5;
+  }
+  .checkbox-line input[type=checkbox]{
+    width:auto;margin:2px 0 0;flex:none;cursor:pointer;accent-color:var(--accent);
+  }
+  input:disabled{background:#f2f0eb;color:#9a978d;cursor:not-allowed;}
+
   /* แถบเตือนเมื่ออ่านไฟล์ข้อมูลรอบอบรมไม่สำเร็จ */
   .data-warning{
     background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger);
@@ -185,7 +195,7 @@
 
     <div class="session-info" id="sessionInfo"></div>
     <p class="no-selection" id="noSelection">ยังไม่ได้เลือกวันที่</p>
-    <p class="sync-note"><span class="sync-dot"></span>หากวันที่ไม่ตรงกับที่แจ้งไว้ กรุณาติดต่อเจ้าหน้าที่ก่อนลงทะเบียน</p>
+    <p class="sync-note"><span class="sync-dot"></span><span id="dataDate">หากวันที่ไม่ตรงกับที่แจ้งไว้ กรุณาติดต่อเจ้าหน้าที่ก่อนลงทะเบียน</span></p>
   </div>
 
   <!-- ===== 2. ข้อมูลบริษัทและตัวแทน ===== -->
@@ -197,11 +207,11 @@
     <input type="text" id="companyName" placeholder="เช่น บริษัท เอบีซี จำกัด">
 
     <label for="workUnit">หน่วยงานที่ปฏิบัติงาน</label>
-    <select id="workUnit">
-      <option value="" disabled selected>เลือกหน่วยงาน</option>
-      <option value="OC">OC</option>
-      <option value="ปท.1">ปท.1</option>
-    </select>
+    <input type="text" id="workUnit" list="workUnitOptions" placeholder="เลือกจากรายการ หรือพิมพ์ชื่อหน่วยงานเอง" autocomplete="off">
+    <datalist id="workUnitOptions">
+      <option value="OC">
+      <option value="ปท.1">
+    </datalist>
 
     <div class="two-col">
       <div>
@@ -216,6 +226,11 @@
 
     <label for="repEmail">อีเมลที่ใช้รับไฟล์บัตรผู้รับเหมา</label>
     <input type="email" id="repEmail" placeholder="name@company.com">
+
+    <label class="checkbox-line" for="noEmail">
+      <input type="checkbox" id="noEmail">
+      <span>ไม่มีอีเมล — เจ้าหน้าที่จะติดต่อกลับทางเบอร์โทร และมอบบัตรให้ที่หน้างานในวันอบรม</span>
+    </label>
   </div>
 
   <!-- ===== 3. รายชื่อผู้เข้าอบรม ===== -->
@@ -343,6 +358,62 @@
     return Number.isFinite(n) ? n : 0;
   }
 
+  /* =========================================================================
+     การตรวจสอบข้อมูลติดต่อ
+
+     สาเหตุที่ต้องตรวจ: ผู้เข้าอบรมทุกคนในใบจองเดียวกันใช้อีเมลของตัวแทนผู้จอง
+     เพียงอีเมลเดียว หากกรอกผิด ทั้งกลุ่มจะไม่ได้รับบัตร ไม่ได้รับนัดหมาย
+     และไม่ได้รับแจ้งหากรอบอบรมถูกยกเลิก เบอร์โทรจึงเป็นช่องทางสำรองเดียว
+
+     หมายเหตุ: การตรวจในหน้าเว็บเป็นเพียงด่านอำนวยความสะดวก ไม่ใช่ด่านที่กันจริง
+     เพราะผู้ใช้เปิด Microsoft Forms โดยตรงได้โดยไม่ผ่านหน้านี้
+     ด่านที่กันจริงอยู่ใน Power Automate (ตัวแปร SafeEmail)
+  ========================================================================= */
+
+  /* ค่าเฝ้าระวังสำหรับผู้ที่ไม่มีอีเมล
+
+     ใช้รูปแบบที่ถูกต้องตามหลักอีเมล เพื่อให้ Outlook ไม่ปฏิเสธจนทำให้ Flow ล้ม
+     และใช้โดเมน .local ซึ่งไม่มีอยู่จริงบนอินเทอร์เน็ต เพื่อให้ Power Automate
+     ตรวจจับค่านี้แล้วเปลี่ยนปลายทางไปยังอีเมลเจ้าหน้าที่แทนการส่งออกจริง
+
+     ค่านี้ต้องตรงกับที่กำหนดไว้ในสูตร SafeEmail ของ Flow 1 เป๊ะ ๆ */
+  const NO_EMAIL_SENTINEL = 'no-email@staffpermit.local';
+
+  const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  /* ทำความสะอาดอีเมลก่อนนำไปใช้
+
+     ปัญหาที่พบจากการใช้งานจริง: ผู้ใช้กรอกชื่อภาษาไทยในช่องก่อนหน้า ทำให้แป้นพิมพ์
+     ยังอยู่ในโหมดภาษาไทย เมื่อพิมพ์อักษรตัวแรกของอีเมลจึงได้อักขระไทยติดมา
+     (ปุ่ม n ให้ผลเป็นสระ "ื") ซึ่งเป็นสระบนที่สังเกตได้ยาก ผู้ใช้จึงพิมพ์อีเมลใหม่
+     ทับโดยไม่ได้ลบอักขระที่ค้างอยู่ ผลลัพธ์คือค่าอย่าง "ืname@company.com" */
+  function cleanEmail(raw){
+    return String(raw || '')
+      .replace(/[\u0E00-\u0E7F]/g, '')  // ตัดอักขระภาษาไทยทุกตัว
+      .replace(/\s+/g, '')               // ตัดช่องว่างทุกตำแหน่ง
+      .trim();
+  }
+
+  /* ตรวจเบอร์โทรศัพท์ไทย: ขึ้นต้นด้วย 0 ตามด้วยตัวเลขรวม 9-10 หลัก
+     ตัดขีดและช่องว่างออกก่อนตรวจ เพื่อให้กรอกได้ทั้ง 081-234-5678 และ 0812345678 */
+  function isValidThaiPhone(raw){
+    return /^0[0-9]{8,9}$/.test(String(raw || '').replace(/[-\s]/g, ''));
+  }
+
+  const noEmailBox    = document.getElementById('noEmail');
+  const repEmailInput = document.getElementById('repEmail');
+
+  // ปิดใช้งานช่องอีเมลเมื่อผู้ใช้ระบุว่าไม่มีอีเมล เพื่อไม่ให้เกิดค่าขัดแย้งกัน
+  noEmailBox.addEventListener('change', () => {
+    repEmailInput.disabled = noEmailBox.checked;
+    if(noEmailBox.checked) repEmailInput.value = '';
+  });
+
+  // ทำความสะอาดทันทีที่ออกจากช่อง เพื่อให้ผู้ใช้เห็นค่าที่ถูกต้องก่อนกดส่ง
+  repEmailInput.addEventListener('blur', (e) => {
+    e.target.value = cleanEmail(e.target.value);
+  });
+
   async function loadTrainingSessions(){
     let rawData;
 
@@ -352,6 +423,9 @@
          เก็บไฟล์เวอร์ชันเก่าไว้แล้วแสดงวันที่ที่ถูกแก้ไปแล้ว */
       const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // อ่านวันเวลาที่ไฟล์ถูกแก้ไขล่าสุด เพื่อบอกผู้ใช้ว่าข้อมูลชุดนี้ใหม่แค่ไหน
+      showDataDate(res.headers.get('last-modified'));
 
       rawData = await res.json();
       if(!Array.isArray(rawData) || rawData.length === 0){
@@ -379,6 +453,28 @@
     bar.className = 'data-warning';
     bar.innerHTML = '<b>ไม่สามารถโหลดข้อมูลรอบอบรมล่าสุดได้</b><br>วันที่ที่แสดงอยู่อาจไม่ตรงกับความเป็นจริง กรุณาติดต่อเจ้าหน้าที่ก่อนลงทะเบียน';
     document.querySelector('.cal-header').before(bar);
+  }
+
+  /* แสดงวันเวลาที่ข้อมูลรอบอบรมถูกอัปเดตล่าสุด
+
+     ระบุข้อเท็จจริงแทนการเตือนแบบคลุมเครือว่า "ข้อมูลอาจไม่ตรงกับปัจจุบัน"
+     เพราะคำเตือนที่ไม่บอกว่าคลาดเคลื่อนแค่ไหน ไม่ช่วยให้ผู้ใช้ตัดสินใจอะไรได้
+     แต่ทำให้ทั้งหน้าดูไม่น่าเชื่อถือ ส่วนวันเวลาที่ระบุชัดเจนทำให้ผู้ใช้ประเมินเองได้
+     ว่าควรเชื่อจำนวนที่นั่งที่เห็น หรือควรโทรสอบถามเจ้าหน้าที่ก่อน
+
+     ค่ามาจาก HTTP header ที่เซิร์ฟเวอร์ส่งมาพร้อมไฟล์ จึงไม่ต้องเพิ่มฟิลด์
+     วันที่เข้าไปในไฟล์ JSON และไม่ต้องให้เจ้าหน้าที่กรอกเองให้ผิดพลาดได้ */
+  function showDataDate(lastModified){
+    if(!lastModified) return;
+
+    const d = new Date(lastModified);
+    if(isNaN(d.getTime())) return;
+
+    const label = d.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'numeric' })
+                + ' ' + d.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + ' น.';
+
+    const el = document.getElementById('dataDate');
+    if(el) el.textContent = `ข้อมูลรอบอบรมอัปเดตล่าสุด ${label}`;
   }
 
   function renderCalendar(){
@@ -442,7 +538,9 @@
     const total  = toNumber(s.TotalSeats);
     const booked = toNumber(s.BookedSeats);
 
-    sessionInfo.innerHTML = `<b>${s.CourseName} (${s.CourseCode})</b>วันที่ ${toMMDDYYYY(key)} · ${s.Time} · เหลือที่นั่ง ${total - booked}/${total}`;
+    sessionInfo.innerHTML =
+      `<b>${s.CourseName} (${s.CourseCode})</b>` +
+      `วันที่ ${toMMDDYYYY(key)} · ${s.Time} · เหลือที่นั่ง ${total - booked}/${total}`;
     sessionInfo.classList.add('show');
     noSelection.style.display = 'none';
     renderCalendar();
@@ -503,7 +601,9 @@
     const workUnit     = document.getElementById('workUnit').value.trim();
     const repName      = document.getElementById('repName').value.trim();
     const repPhone     = document.getElementById('repPhone').value.trim();
-    const repEmail     = document.getElementById('repEmail').value.trim();
+    const repEmail     = noEmailBox.checked
+                           ? NO_EMAIL_SENTINEL
+                           : cleanEmail(repEmailInput.value);
     const trainingDate = selectedDate; // 'YYYY-MM-DD' ที่ใช้ภายในระบบ
 
     const rows = Array.from(document.querySelectorAll('.participant-row'));
@@ -526,6 +626,16 @@
     }
     if(!companyName || !workUnit || !repName || !repPhone || !repEmail){
       alert('กรุณากรอกข้อมูลบริษัทและตัวแทนผู้จองให้ครบทุกช่อง');
+      return;
+    }
+    if(!isValidThaiPhone(repPhone)){
+      alert('เบอร์โทรไม่ถูกต้อง กรุณากรอกเบอร์ 9-10 หลัก ขึ้นต้นด้วย 0');
+      document.getElementById('repPhone').focus();
+      return;
+    }
+    if(!EMAIL_PATTERN.test(repEmail)){
+      alert('รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง\n\nหากไม่มีอีเมล กรุณาติ๊กช่อง "ไม่มีอีเมล" ด้านล่างช่องกรอก');
+      repEmailInput.focus();
       return;
     }
     if(validNames.length === 0){
