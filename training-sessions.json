@@ -1,7 +1,11 @@
 [
-  {"TrainingDate":"2026-09-14","CourseCode":"ST-051","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":50.0,"BookedSeats":50.0,"SlotStatus":"ปิดรับ"},
-  {"TrainingDate":"2026-09-09","CourseCode":"ST-055","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":5.0,"BookedSeats":3.0,"SlotStatus":"เปิดรับ"},
-  {"TrainingDate":"2026-09-16","CourseCode":"ST-060","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"13.30 - 16.30","TotalSeats":50.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
-  {"TrainingDate":"2026-09-23","CourseCode":"ST-061","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"13.30 - 16.30","TotalSeats":100.0,"BookedSeats":2.0,"SlotStatus":"ปิดรับ"},
-  {"TrainingDate":"2026-09-30","CourseCode":"ST-064","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"}
+{"TrainingDate":"2026-08-31","CourseCode":"ST-049","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":1.0,"SlotStatus":"ยกเลิก"},
+{"TrainingDate":"2026-09-14","CourseCode":"ST-051","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":50.0,"BookedSeats":50.0,"SlotStatus":"ปิดรับ"},
+{"TrainingDate":"2026-09-21","CourseCode":"ST-052","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":10.0,"BookedSeats":1.0,"SlotStatus":"ยกเลิก"},
+{"TrainingDate":"2026-09-28","CourseCode":"ST-053","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":5.0,"BookedSeats":2.0,"SlotStatus":"ยกเลิก"},
+{"TrainingDate":"2026-09-11","CourseCode":"ST-054","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":50.0,"BookedSeats":2.0,"SlotStatus":"ยกเลิก"},
+{"TrainingDate":"2026-09-09","CourseCode":"ST-055","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":5.0,"BookedSeats":3.0,"SlotStatus":"ยกเลิก"},
+{"TrainingDate":"2026-09-16","CourseCode":"ST-060","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"13.30 - 16.30","TotalSeats":50.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
+{"TrainingDate":"2026-09-23","CourseCode":"ST-061","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"13.30 - 16.30","TotalSeats":100.0,"BookedSeats":2.0,"SlotStatus":"ปิดรับ"},
+{"TrainingDate":"2026-09-30","CourseCode":"ST-064","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"}
 ]
