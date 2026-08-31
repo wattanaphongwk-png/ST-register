@@ -540,7 +540,7 @@
 
     sessionInfo.innerHTML =
       `<b>${s.CourseName} (${s.CourseCode})</b>` +
-      `วันที่ ${toMMDDYYYY(key)} · ${s.Time} · เหลือที่นั่ง ${total - booked}/${total}`;
+      `วันที่ ${toMMDDYYYY(key)} · ${s.Time} `;
     sessionInfo.classList.add('show');
     noSelection.style.display = 'none';
     renderCalendar();
