@@ -1,4 +1,7 @@
-[{"TrainingDate":"2026-09-07","CourseCode":"ST-066","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
-  {"TrainingDate":"2026-09-14","CourseCode":"ST-067","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
-  {"TrainingDate":"2026-09-21","CourseCode":"ST-068","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
-  {"TrainingDate":"2026-09-28","CourseCode":"ST-069","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"}]
+[{"TrainingDate":"2026-09-14","CourseCode":"ST-001","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
+  {"TrainingDate":"2026-09-21","CourseCode":"ST-002","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
+  {"TrainingDate":"2026-09-28","CourseCode":"ST-003","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
+  {"TrainingDate":"2026-10-05","CourseCode":"ST-004","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
+  {"TrainingDate":"2026-10-12","CourseCode":"ST-005","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
+  {"TrainingDate":"2026-10-19","CourseCode":"ST-006","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"},
+  {"TrainingDate":"2026-10-26","CourseCode":"ST-007","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","TotalSeats":100.0,"BookedSeats":0.0,"SlotStatus":"เปิดรับ"}]
