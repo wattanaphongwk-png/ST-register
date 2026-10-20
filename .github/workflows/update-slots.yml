@@ -1,0 +1,39 @@
+name: Update training sessions
+
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: update-slots
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: startsWith(github.event.issue.title, 'SLOTS')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: เขียนไฟล์จากเนื้อหา Issue
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          printf '%s' "$BODY" > training-sessions.json
+          python3 -c "import json;d=json.load(open('training-sessions.json'));assert isinstance(d,list) and len(d)>0"
+
+      - name: บันทึกลง repo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add training-sessions.json
+          git commit -m "อัปเดตรอบอบรมจาก issue #${{ github.event.issue.number }}" || echo "ไม่มีการเปลี่ยนแปลง"
+          git push
+
+      - name: ปิด Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue close ${{ github.event.issue.number }}
