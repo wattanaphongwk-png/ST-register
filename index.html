@@ -531,44 +531,20 @@
     }
   }
 
-    function selectDate(key){
+      function selectDate(key){
     selectedDate = key;
     const s = trainingSessions[key];
 
     const total  = toNumber(s.TotalSeats);
     const booked = toNumber(s.BookedSeats);
-    const left   = total - booked;
-
-    /* แสดงที่นั่งเป็น "ไม่เกิน" เสมอ ไม่ใช่ตัวเลขเป๊ะ
-
-       BookedSeats ในไฟล์นี้ถูกสร้างเป็นรอบ (06:00 และ 17:00 หรือเมื่อเจ้าหน้าที่
-       แก้ข้อมูลรอบอบรม) ไม่ได้อัปเดตทุกครั้งที่มีคนจอง เพราะถ้าให้อัปเดตทุกครั้ง
-       Flow จะถูกปลุกตามจำนวนใบจองทั้งหมด ซึ่งไม่คุ้มกับความสดของตัวเลข
-
-       ระหว่างสองรอบมีแต่คนจองเพิ่ม ไม่มีใครถูกลบออก ค่าที่เห็นจึงเป็นค่าสูงสุด
-       ที่เป็นไปได้เสมอ คำว่า "ไม่เกิน" จึงถูกต้องทุกกรณี ต่างจากการระบุจำนวนเป๊ะ
-       ซึ่งจะผิดทันทีที่มีคนจองเพิ่มหนึ่งคน และผิดในทางที่ทำให้ผู้รับเหมาพากลุ่มมา
-       เกินจำนวนที่รับได้จริง */
-    let seatText = '';
-    if(total > 0){
-      if(left <= 0){
-        seatText = `รับ ${total} คน · ที่นั่งเกือบเต็ม กรุณาติดต่อเจ้าหน้าที่ก่อนลงทะเบียน`;
-      } else if(left <= total * 0.25){
-        seatText = `รับ ${total} คน · ใกล้เต็ม เหลือไม่เกิน ${left} ที่นั่ง`;
-      } else {
-        seatText = `รับ ${total} คน · เหลือไม่เกิน ${left} ที่นั่ง`;
-      }
-    }
 
     sessionInfo.innerHTML =
       `<b>${s.CourseName} (${s.CourseCode})</b>` +
-      `วันที่ ${toMMDDYYYY(key)} · ${s.Time}` +
-      (seatText ? `<br>${seatText}` : '');
+      `วันที่ ${toMMDDYYYY(key)} · ${s.Time} `;
     sessionInfo.classList.add('show');
     noSelection.style.display = 'none';
     renderCalendar();
   }
-
   document.getElementById('calPrev').addEventListener('click', () => {
     viewMonth--;
     if(viewMonth < 0){ viewMonth = 11; viewYear--; }
