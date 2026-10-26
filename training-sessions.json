@@ -1,9 +1,8 @@
 [
-{"TrainingDate":"2026-10-26","CourseCode":"ST-007","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
+{"TrainingDate":"2026-10-26","CourseCode":"ST-007","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"ปิดรับ"},
 {"TrainingDate":"2026-11-02","CourseCode":"ST-011","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
 {"TrainingDate":"2026-11-09","CourseCode":"ST-012","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
 {"TrainingDate":"2026-11-16","CourseCode":"ST-013","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
 {"TrainingDate":"2026-11-23","CourseCode":"ST-014","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
-{"TrainingDate":"2026-11-30","CourseCode":"ST-015","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
-{"TrainingDate":"2026-10-27","CourseCode":"ST-018","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"13.30 - 16.30","SlotStatus":"ยกเลิก"}
+{"TrainingDate":"2026-11-30","CourseCode":"ST-015","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"}
 ]
