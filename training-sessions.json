@@ -1,9 +1,9 @@
 [
-{"TrainingDate":"2026-11-16","CourseCode":"ST-013","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"ปิดรับ"},
-{"TrainingDate":"2026-11-23","CourseCode":"ST-014","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
-{"TrainingDate":"2026-11-30","CourseCode":"ST-015","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
-{"TrainingDate":"2026-12-08","CourseCode":"ST-018","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
-{"TrainingDate":"2026-12-14","CourseCode":"ST-019","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
-{"TrainingDate":"2026-12-21","CourseCode":"ST-020","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
-{"TrainingDate":"2026-12-28","CourseCode":"ST-021","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"}
+{"TrainingDate":"2026-11-16","CouseCode":"ST-013","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
+{"TrainingDate":"2026-11-23","CouseCode":"ST-014","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
+{"TrainingDate":"2026-11-30","CouseCode":"ST-015","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
+{"TrainingDate":"2026-12-08","CouseCode":"ST-018","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
+{"TrainingDate":"2026-12-14","CouseCode":"ST-019","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
+{"TrainingDate":"2026-12-21","CouseCode":"ST-020","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"},
+{"TrainingDate":"2026-12-28","CouseCode":"ST-021","CourseName":"อบรมความปลอดภัยผู้รับเหมา 3 ชม.","Time":"09.00 - 12.00","SlotStatus":"เปิดรับ"}
 ]
